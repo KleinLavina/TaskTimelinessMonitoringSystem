@@ -16,6 +16,10 @@ urlpatterns = [
     
     
     # Other pages (add these if you have them)
-    path('products/', views.products_view, name='products'),
+    path('tasks/', views.tasks_view, name='tasks'),
+    path('tasks/add/', views.add_task_view, name='add_task'),
+    path('tasks/edit/<int:id>/', views.edit_task_view, name='edit_task'),
+    path('tasks/delete/<int:id>/', views.delete_task_view, name='delete_task'),
+    path('tasks/get/<int:id>/', views.get_task_data, name='get_task_data'),
     path('settings/', views.settings_view, name='settings'),
 ]

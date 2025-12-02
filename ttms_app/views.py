@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
-from .models import Employee
+from .models import Employee, Task
 
 def dashboard_view(request):
     """Render the admin dashboard"""
@@ -23,7 +23,7 @@ def users_view(request):
         'inapp_count': inapp_count,          # This should work
         'none_count': none_count,            # This should work
     }
-    return render(request, 'admin_dashboard/users.html', context)
+    return render(request, 'admin_dashboard/employee.html', context)
 
 def add_employee_view(request):
     """Add a new employee"""
@@ -84,9 +84,80 @@ def get_employee_data(request, id):
     return JsonResponse(data)
 
 # Add other views you might need
-def products_view(request):
-    """Products page view"""
-    return render(request, 'admin_dashboard/products.html')
+
+def tasks_view(request):
+    """Task Definitions page view"""
+    tasks = Task.objects.all().order_by('id')
+    
+    total_tasks = tasks.count()
+    high_priority_count = tasks.filter(priority='high').count()
+    medium_priority_count = tasks.filter(priority='medium').count()
+    low_priority_count = tasks.filter(priority='low').count()
+    
+    context = {
+        'page_title': 'Task Management',
+        'tasks': tasks,
+        'total_tasks': total_tasks,
+        'high_priority_count': high_priority_count,
+        'medium_priority_count': medium_priority_count,
+        'low_priority_count': low_priority_count,
+    }
+    return render(request, 'admin_dashboard/tasks.html', context)
+
+def add_task_view(request):
+    """Add a new task definition"""
+    if request.method == 'POST':
+        try:
+            Task.objects.create(
+                title=request.POST.get('title'),
+                description=request.POST.get('description', ''),
+                standard_duration_days=request.POST.get('standard_duration_days', 3),
+                priority=request.POST.get('priority', 'medium')
+            )
+            messages.success(request, 'Task definition added successfully!')
+        except Exception as e:
+            messages.error(request, f'Error adding task: {str(e)}')
+    
+    return redirect('ttms_app:tasks')
+
+def edit_task_view(request, id):
+    """Edit an existing task definition"""
+    task = get_object_or_404(Task, id=id)
+    
+    if request.method == 'POST':
+        try:
+            task.title = request.POST.get('title')
+            task.description = request.POST.get('description', '')
+            task.standard_duration_days = request.POST.get('standard_duration_days', 3)
+            task.priority = request.POST.get('priority', 'medium')
+            task.save()
+            messages.success(request, f'Task "{task.title}" updated successfully!')
+        except Exception as e:
+            messages.error(request, f'Error updating task: {str(e)}')
+    
+    return redirect('ttms_app:tasks')
+
+def delete_task_view(request, id):
+    """Delete a task definition"""
+    if request.method == 'POST':
+        task = get_object_or_404(Task, id=id)
+        task_title = task.title
+        task.delete()
+        messages.success(request, f'Task "{task_title}" deleted successfully!')
+    
+    return redirect('ttms_app:tasks')
+
+def get_task_data(request, id):
+    """Get task data for editing (AJAX)"""
+    task = get_object_or_404(Task, id=id)
+    data = {
+        'id': task.id,
+        'title': task.title,
+        'description': task.description,
+        'standard_duration_days': task.standard_duration_days,
+        'priority': task.priority,
+    }
+    return JsonResponse(data)
 
 
 
