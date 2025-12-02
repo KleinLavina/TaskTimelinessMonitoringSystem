@@ -1,0 +1,67 @@
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo-icon">
+            <i class="fas fa-tachometer-alt"></i>
+        </div>
+        <h3>Admin Panel</h3>
+        <p class="text-muted small mb-0">v2.0.0</p>
+    </div>
+    
+    <div class="sidebar-menu py-3">
+        <ul class="nav flex-column">
+            <!-- Use Django URL tags with namespace -->
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'ttms_app:dashboard' %}">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'ttms_app:users' %}">
+                    <i class="fas fa-users me-2"></i>
+                    <span>Users</span>
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'ttms_app:products' %}">
+                    <i class="fas fa-box me-2"></i>
+                    <span>Products</span>
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'ttms_app:orders' %}">
+                    <i class="fas fa-shopping-cart me-2"></i>
+                    <span>Orders</span>
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'ttms_app:analytics' %}">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    <span>Analytics</span>
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'ttms_app:settings' %}">
+                    <i class="fas fa-cog me-2"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            
+            <li class="nav-item mt-4">
+                <hr class="dropdown-divider">
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link text-danger" href="{% url 'ttms_app:logout' %}">
+                    <i class="fas fa-sign-out-alt me-2"></i>
+                    <span>Logout</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</aside>

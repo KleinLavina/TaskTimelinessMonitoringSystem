@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Dashboard{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --sidebar-width: 250px;
+            --header-height: 60px;
+            --primary-color: #4e73df;
+            --sidebar-bg: #ffffff;
+            --content-bg: #f8f9fc;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--content-bg);
+            overflow-x: hidden;
+        }
+        
+        .dashboard-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid #e3e6f0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: all 0.3s;
+            z-index: 1000;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        
+        .sidebar-header {
+            padding: 1.5rem 1rem;
+            border-bottom: 1px solid #e3e6f0;
+            text-align: center;
+        }
+        
+        .sidebar-header h3 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .sidebar-header .logo-icon {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Content Area Styles */
+        .content-area {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            transition: all 0.3s;
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .top-header {
+            height: var(--header-height);
+            background-color: #ffffff;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 0 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        }
+        
+        .header-left .sidebar-toggle {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #6c757d;
+            cursor: pointer;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 1.5rem;
+        }
+        
+        .content-card {
+            background-color: #ffffff;
+            border-radius: 0.35rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                margin-left: -250px;
+            }
+            
+            .sidebar.active {
+                margin-left: 0;
+            }
+            
+            .content-area {
+                margin-left: 0;
+            }
+            
+            .content-area.active {
+                margin-left: 250px;
+            }
+        }
+        
+        /* Page title */
+        .page-title {
+            color: #5a5c69;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Active menu item */
+        .sidebar-menu .nav-item.active {
+            background-color: rgba(78, 115, 223, 0.1);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .sidebar-menu .nav-item.active .nav-link {
+            color: var(--primary-color) !important;
+        }
+        
+        /* Content area transitions */
+        .content-wrapper {
+            transition: opacity 0.3s ease;
+        }
+        
+        /* Loading spinner */
+        .loading-spinner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+    
+    <div class="dashboard-wrapper">
+        <!-- Sidebar will be included here -->
+        {% include 'admin_dashboard/sidebar.html' %}
+        
+        <!-- Content Area -->
+        <div class="content-area" id="contentArea">
+            <!-- Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="sidebar-toggle" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <span class="ms-3 d-none d-md-inline" id="pageTitle">Dashboard</span>
+                </div>
+                
+                <div class="header-right">
+                    <div class="user-profile">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-info d-none d-md-block">
+                            <div class="user-name fw-bold">Admin User</div>
+                            <div class="user-role text-muted small">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Main Content - This will be dynamically replaced -->
+            <main class="main-content" id="mainContent">
+                {% block content %}
+                <!-- Content will be loaded here dynamically -->
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+    
+    <!-- Bootstrap 5 JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const contentArea = document.getElementById('contentArea');
+            
+            sidebar.classList.toggle('active');
+            contentArea.classList.toggle('active');
+        });
+        
+        // Load content dynamically without page refresh
+        async function loadPageContent(pageUrl, pageTitle) {
+            // Show loading spinner
+            document.getElementById('loadingSpinner').style.display = 'block';
+            
+            try {
+                // Fetch the page content
+                const response = await fetch(pageUrl);
+                const html = await response.text();
+                
+                // Create a temporary div to parse the HTML
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                
+                // Extract just the content from the page
+                const newContent = tempDiv.querySelector('#mainContent').innerHTML;
+                const newTitle = tempDiv.querySelector('#pageTitle').textContent || pageTitle;
+                
+                // Update the content area
+                document.getElementById('mainContent').innerHTML = newContent;
+                document.getElementById('pageTitle').textContent = newTitle;
+                
+                // Update URL in browser without reload
+                history.pushState({}, '', pageUrl);
+                
+                // Update active menu item
+                updateActiveMenuItem(pageUrl);
+                
+            } catch (error) {
+                console.error('Error loading page:', error);
+                document.getElementById('mainContent').innerHTML = `
+                    <div class="content-card">
+                        <h5>Error Loading Page</h5>
+                        <p>Could not load the requested page. Please try again.</p>
+                    </div>
+                `;
+            } finally {
+                // Hide loading spinner
+                document.getElementById('loadingSpinner').style.display = 'none';
+            }
+        }
+        
+        // Update active menu item
+        function updateActiveMenuItem(pageUrl) {
+            // Remove active class from all menu items
+            document.querySelectorAll('.sidebar-menu .nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to current page
+            const menuItems = document.querySelectorAll('.sidebar-menu .nav-link');
+            menuItems.forEach(item => {
+                if (item.getAttribute('href') === pageUrl || 
+                    item.dataset.page === pageUrl.replace(/^\//, '')) {
+                    item.parentElement.classList.add('active');
+                }
+            });
+        }
+        
+        // Handle sidebar link clicks
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.sidebar-menu .nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const pageUrl = this.getAttribute('href');
+                    const pageTitle = this.querySelector('span').textContent;
+                    
+                    // Don't reload if it's the same page or external link
+                    if (pageUrl.startsWith('#') || pageUrl.startsWith('http')) {
+                        return;
+                    }
+                    
+                    e.preventDefault();
+                    loadPageContent(pageUrl, pageTitle);
+                });
+            });
+            
+            // Handle browser back/forward buttons
+            window.addEventListener('popstate', function() {
+                loadPageContent(window.location.pathname, document.getElementById('pageTitle').textContent);
+            });
+            
+            // Set initial active menu item based on current URL
+            updateActiveMenuItem(window.location.pathname);
+        });
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.querySelector('.sidebar');
+            const contentArea = document.getElementById('contentArea');
+            const toggleBtn = document.getElementById('sidebarToggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !toggleBtn.contains(event.target) && 
+                sidebar.classList.contains('active')) {
+                
+                sidebar.classList.remove('active');
+                contentArea.classList.remove('active');
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

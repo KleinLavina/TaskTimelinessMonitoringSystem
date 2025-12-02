@@ -1,0 +1,78 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Dashboard - Admin Panel{% endblock %}
+
+{% block content %}
+<!-- This is the MAIN DASHBOARD container that never changes -->
+<!-- It includes different content based on the page -->
+
+<div class="content-wrapper" id="contentWrapper">
+    <!-- Page title will be set dynamically -->
+    <h1 class="page-title" id="dynamicPageTitle">Dashboard Overview</h1>
+    
+    <!-- Content will be loaded here dynamically -->
+    <div id="dynamicContent">
+        {% include 'admin_dashboard/content.html' %}
+    </div>
+</div>
+
+<script>
+// When this page loads, it's the dashboard home
+document.addEventListener('DOMContentLoaded', function() {
+    // Update page title
+    document.getElementById('pageTitle').textContent = 'Dashboard';
+    document.getElementById('dynamicPageTitle').textContent = 'Dashboard Overview';
+    
+    // Store the initial dashboard content
+    const initialContent = document.getElementById('dynamicContent').innerHTML;
+    
+    // Function to load different content
+    window.loadContent = function(contentName) {
+        const contentArea = document.getElementById('dynamicContent');
+        
+        // Show loading state
+        contentArea.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">Loading ${contentName}...</p>
+            </div>
+        `;
+        
+        // Simulate loading different content
+        setTimeout(() => {
+            switch(contentName) {
+                case 'users':
+                    contentArea.innerHTML = `
+                        <div class="content-card">
+                            <h5>Users Management</h5>
+                            <p>This is the users management page content.</p>
+                            <!-- Add actual users content here -->
+                        </div>
+                    `;
+                    document.getElementById('dynamicPageTitle').textContent = 'User Management';
+                    break;
+                    
+                case 'products':
+                    contentArea.innerHTML = `
+                        <div class="content-card">
+                            <h5>Products Management</h5>
+                            <p>This is the products management page content.</p>
+                            <!-- Add actual products content here -->
+                        </div>
+                    `;
+                    document.getElementById('dynamicPageTitle').textContent = 'Product Management';
+                    break;
+                    
+                case 'dashboard':
+                default:
+                    contentArea.innerHTML = initialContent;
+                    document.getElementById('dynamicPageTitle').textContent = 'Dashboard Overview';
+                    break;
+            }
+        }, 300);
+    };
+});
+</script>
+{% endblock %}
