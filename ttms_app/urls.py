@@ -1,18 +1,21 @@
 from django.urls import path
 from . import views
 
-app_name = 'ttms_app'  # Important for namespace
+app_name = 'ttms_app'
 
 urlpatterns = [
-    # Dashboard URLs
+    # Dashboard
     path('', views.dashboard_view, name='dashboard'),
-    path('dashboard/', views.dashboard_view, name='dashboard'),  # Optional alias
     
-    # Other pages
+    # Employee CRUD
     path('users/', views.users_view, name='users'),
+    path('users/add/', views.add_employee_view, name='add_employee'),
+    path('users/edit/<int:id>/', views.edit_employee_view, name='edit_employee'),
+    path('users/delete/<int:id>/', views.delete_employee_view, name='delete_employee'),
+    path('users/get/<int:id>/', views.get_employee_data, name='get_employee_data'),
+    
+    
+    # Other pages (add these if you have them)
     path('products/', views.products_view, name='products'),
-    path('orders/', views.orders_view, name='orders'),
-    path('analytics/', views.analytics_view, name='analytics'),
     path('settings/', views.settings_view, name='settings'),
-    path('logout/', views.logout_view, name='logout'),
 ]

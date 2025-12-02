@@ -1,67 +1,399 @@
 {% extends 'admin_dashboard/base.html' %}
 
-{% block title %}Users - Admin Panel{% endblock %}
+{% block title %}Employees - Admin Panel{% endblock %}
 
 {% block content %}
+<!-- Add this to your HTML head or before closing body -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <div class="content-wrapper">
-    <h1 class="page-title">User Management</h1>
+    <h1 class="page-title">Employee Management</h1>
     
-    <div class="content-card">
+    <div class="content-card"> 
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="fw-bold text-gray-800">All Users</h5>
-            <button class="btn btn-primary">
-                <i class="fas fa-plus me-2"></i>Add New User
-            </button>
+            <h5 class="fw-bold text-gray-800">All Employees ({{ total_employees }})</h5>
+            <div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+                    <i class="fas fa-plus me-1"></i>Add Employee
+                </button>
+            </div>
         </div>
         
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>{{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if employees %}
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Status</th>
+                        <th>#</th>
+                        <th>Employee</th>
+                        <th>Contact</th>
+                        <th>Department</th>
+                        <th>Position</th>
+                        <th>Notifications</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>#001</td>
+                    {% for employee in employees %}
+                    <tr id="employee-{{ employee.id }}">
+                        <td>{{ forloop.counter }}</td>
                         <td>
                             <div class="d-flex align-items-center">
-                                <div class="user-avatar me-2">JD</div>
-                                John Doe
+                                <div class="user-avatar me-2 bg-primary text-white">
+                                    {{ employee.full_name|first|upper }}
+                                </div>
+                                <div>
+                                    <strong>{{ employee.full_name }}</strong>
+                                </div>
                             </div>
                         </td>
-                        <td>john@example.com</td>
-                        <td>Admin</td>
-                        <td><span class="badge bg-success">Active</span></td>
                         <td>
-                            <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
-                            <button class="btn btn-sm btn-outline-danger">Delete</button>
+                            <div>
+                                <i class="fas fa-envelope me-1 text-muted"></i>
+                                {{ employee.email }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if employee.department %}
+                                <span class="badge bg-info">{{ employee.department }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if employee.role %}
+                                {{ employee.role }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if employee.notification_preference == 'email' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-envelope me-1"></i>Email
+                                </span>
+                            {% elif employee.notification_preference == 'in_app' %}
+                                <span class="badge bg-primary">
+                                    <i class="fas fa-bell me-1"></i>In-App
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-ban me-1"></i>None
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                               <button class="btn btn-outline-primary edit-btn" 
+                                        data-id="{{ employee.id }}"
+                                        data-name="{{ employee.full_name }}"
+                                        data-email="{{ employee.email }}"
+                                        data-dept="{{ employee.department|default:'' }}"
+                                        data-role="{{ employee.role|default:'' }}"
+                                        data-notification="{{ employee.notification_preference }}"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editEmployeeModal">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger delete-btn" 
+                                        data-id="{{ employee.id }}"
+                                        data-name="{{ employee.full_name }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
+                    {% empty %}
                     <tr>
-                        <td>#002</td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="user-avatar me-2">JS</div>
-                                Jane Smith
+                        <td colspan="7" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-users fa-2x mb-3"></i>
+                                <p>No employees found in the database.</p>
                             </div>
                         </td>
-                        <td>jane@example.com</td>
-                        <td>Editor</td>
-                        <td><span class="badge bg-success">Active</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary me-1">Edit</button>
-                            <button class="btn btn-sm btn-outline-danger">Delete</button>
-                        </td>
                     </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
+        
+        <!-- Summary Statistics -->
+    <div class="stat-card">
+       <div class="row mt-4 pt-3 border-top">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-primary">{{ total_employees }}</h4>
+                    <p class="text-muted small mb-0">
+                        <i class="fas fa-users text-primary"></i> Total Employees
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-success">{{ email_count|default:"0" }}</h4>
+                    <p class="text-muted small mb-0">
+                        <i class="fas fa-envelope text-success"></i> Email Notifications
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-info">{{ inapp_count|default:"0" }}</h4>
+                    <p class="text-muted small mb-0">
+                        <i class="fas fa-bell text-info"></i> In-App Notifications
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-secondary">{{ none_count|default:"0" }}</h4>
+                    <p class="text-muted small mb-0">
+                        <i class="fas fa-ban text-secondary"></i> No Notifications
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        {% else %}
+        <!-- Empty state -->
+        <div class="text-center py-5">
+            <i class="fas fa-database fa-4x text-muted mb-4"></i>
+            <h4 class="text-muted">No Employee Data</h4>
+            <p class="text-muted">Click "Add Employee" to add your first employee.</p>
+        </div>
+        {% endif %}
+    </div>
     </div>
 </div>
+
+<!-- Include Modals from Separate Files -->
+{% include 'admin_dashboard/modals/employee_add_modal.html' %}
+{% include 'admin_dashboard/modals/employee_edit_modal.html' %}
+{% include 'admin_dashboard/modals/employee_delete_modal.html' %}
+
+<style>
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+.stat-card{
+    position: sticky;
+    bottom: 0;
+    background-color: white;
+    z-index: 2;
+}
+</style>
+
+<!-- Include JavaScript if separated -->
+{% block extra_js %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ========== EDIT BUTTON FUNCTIONALITY ==========
+    document.querySelectorAll('.edit-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const employeeId = this.getAttribute('data-id');
+            const employeeName = this.getAttribute('data-name');
+            const employeeEmail = this.getAttribute('data-email');
+            const employeeDept = this.getAttribute('data-dept') || '';
+            const employeeRole = this.getAttribute('data-role') || '';
+            const employeeNotif = this.getAttribute('data-notification');
+            
+            // Populate the edit form with current employee data
+            document.getElementById('edit_employee_id').value = employeeId;
+            document.getElementById('edit_full_name').value = employeeName;
+            document.getElementById('edit_email').value = employeeEmail;
+            document.getElementById('edit_department').value = employeeDept;
+            document.getElementById('edit_role').value = employeeRole;
+            document.getElementById('edit_notification').value = employeeNotif;
+            
+            // Update form action URL
+            document.getElementById('editEmployeeForm').action = `/dashboard/users/edit/${employeeId}/`;
+        });
+    });
+    
+    // ========== DELETE BUTTON FUNCTIONALITY ==========
+    let deleteModalInstance = null;
+    
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const employeeId = this.getAttribute('data-id');
+            const employeeName = this.getAttribute('data-name');
+            
+            // Update modal content
+            document.getElementById('deleteEmployeeName').textContent = employeeName;
+            document.getElementById('deleteEmployeeForm').action = `/dashboard/users/delete/${employeeId}/`;
+            
+            // Get modal element
+            const modalElement = document.getElementById('deleteEmployeeModal');
+            
+            // Check if modal is already shown
+            if (modalElement.classList.contains('show')) {
+                return; // Modal is already open
+            }
+            
+            // Create a new modal instance or get existing one
+            deleteModalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+            
+            // Show the modal
+            deleteModalInstance.show();
+        });
+    });
+    
+    // ========== DELETE FORM SUBMISSION ==========
+    const deleteForm = document.getElementById('deleteEmployeeForm');
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', function(e) {
+            const deleteBtn = this.querySelector('button[type="submit"]');
+            const originalText = deleteBtn.innerHTML;
+            
+            // Change button state
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Deleting...';
+            deleteBtn.disabled = true;
+            
+            // Get modal instance and hide it
+            const modalElement = document.getElementById('deleteEmployeeModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            
+            if (modalInstance) {
+                // Hide modal immediately for better UX
+                modalInstance.hide();
+                
+                // Clean up backdrop if it persists
+                setTimeout(() => {
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop && !document.querySelector('.modal.show')) {
+                        backdrop.remove();
+                        document.body.classList.remove('modal-open');
+                        document.body.style.overflow = '';
+                        document.body.style.paddingRight = '';
+                    }
+                }, 300);
+            }
+            
+            // Reset button after 5 seconds if something goes wrong
+            setTimeout(() => {
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }, 5000);
+        });
+    }
+    
+    // ========== MODAL BACKDROP CLEANUP ==========
+    // Clean up backdrop when modal is hidden
+    const deleteModalElement = document.getElementById('deleteEmployeeModal');
+    if (deleteModalElement) {
+        deleteModalElement.addEventListener('hidden.bs.modal', function() {
+            // Small delay to ensure smooth transition
+            setTimeout(() => {
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }, 50);
+        });
+    }
+    
+    // Also handle other modals
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('hidden.bs.modal', function() {
+            // Clean up only if no other modals are open
+            setTimeout(() => {
+                if (!document.querySelector('.modal.show')) {
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.remove();
+                    }
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                }
+            }, 50);
+        });
+    });
+    
+    // ========== AUTO-CLOSE ALERTS ==========
+    document.querySelectorAll('.alert').forEach(alert => {
+        setTimeout(() => {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 5000);
+    });
+    
+    // ========== UNSAVED CHANGES WARNING ==========
+    let formChanged = false;
+    const editForm = document.getElementById('editEmployeeForm');
+    
+    if (editForm) {
+        editForm.querySelectorAll('input, select').forEach(input => {
+            input.addEventListener('change', function() {
+                formChanged = true;
+            });
+        });
+    }
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    });
+    
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('hidden.bs.modal', function() {
+            formChanged = false;
+        });
+    });
+    
+    // ========== KEYBOARD SHORTCUTS ==========
+    document.addEventListener('keydown', function(e) {
+        // Close modal on Escape
+        if (e.key === 'Escape') {
+            const openModal = document.querySelector('.modal.show');
+            if (openModal) {
+                const modalInstance = bootstrap.Modal.getInstance(openModal);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            }
+        }
+        
+        // Submit edit form on Ctrl+Enter
+        if (e.ctrlKey && e.key === 'Enter') {
+            const editModal = document.getElementById('editEmployeeModal');
+            if (editModal && editModal.classList.contains('show')) {
+                document.getElementById('editEmployeeForm').submit();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}

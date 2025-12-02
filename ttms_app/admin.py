@@ -5,7 +5,7 @@ from .models import Employee, Task, TaskAssignment, SystemAlert, PerformanceMetr
 
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'email', 'department', 'notification_preference')
+    list_display = ('full_name', 'email', 'department', 'role', 'notification_preference')
     search_fields = ('full_name', 'email', 'department')
     list_filter = ('department', 'notification_preference')
 

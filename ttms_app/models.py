@@ -10,6 +10,7 @@ class Employee(models.Model):
     
     # Organizational structure (simplified)
     department = models.CharField(max_length=100, blank=True, null=True)
+    role = models.CharField(max_length=100, blank=True, null=True)
     
     # Notification preference (e.g., 'email', 'sms', 'in-app')
     notification_preference = models.CharField(
@@ -19,8 +20,8 @@ class Employee(models.Model):
     )
 
     class Meta:
-        verbose_name = "Worker"
-        verbose_name_plural = "Workers"
+        verbose_name = "Employee"
+        verbose_name_plural = "Employees"
         
     def __str__(self):
         # FIX: Changed self.name to self.full_name to match the field name
