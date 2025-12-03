@@ -1,0 +1,157 @@
+<!-- Add Assignment Modal -->
+<div class="modal fade" id="addAssignmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Assignment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{% url 'ttms_app:add_assignment' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <!-- Assignment Details -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Select Tasks *</label>
+                                <div class="form-control p-2" style="height: 200px; overflow-y: auto;">
+                                    {% for task in available_tasks %}
+                                    <div class="form-check">
+                                        <input class="form-check-input task-checkbox" type="checkbox" 
+                                               name="tasks" value="{{ task.id }}" id="task_{{ task.id }}">
+                                        <label class="form-check-label d-flex justify-content-between" for="task_{{ task.id }}">
+                                            <span>{{ task.title }}</span>
+                                            <span class="badge {% if task.priority == 'high' %}bg-danger
+                                                             {% elif task.priority == 'medium' %}bg-warning
+                                                             {% else %}bg-success{% endif %}">
+                                                {{ task.priority }}
+                                            </span>
+                                        </label>
+                                        <small class="text-muted d-block">{{ task.description|truncatechars:40 }}</small>
+                                    </div>
+                                    {% empty %}
+                                    <div class="text-center text-muted py-3">
+                                        <i class="fas fa-tasks fa-2x mb-2"></i>
+                                        <p>No tasks available. Create tasks first.</p>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="form-text">Select one or more tasks for this assignment</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Assign To Employees *</label>
+                                <div class="form-control p-2" style="height: 200px; overflow-y: auto;">
+                                    {% for employee in available_employees %}
+                                    <div class="form-check">
+                                        <input class="form-check-input employee-checkbox" type="checkbox" 
+                                               name="workers" value="{{ employee.id }}" id="employee_{{ employee.id }}">
+                                        <label class="form-check-label d-flex justify-content-between" for="employee_{{ employee.id }}">
+                                            <span>{{ employee.full_name }}</span>
+                                            <span class="text-muted small">{{ employee.position }}</span>
+                                        </label>
+                                    </div>
+                                    {% empty %}
+                                    <div class="text-center text-muted py-3">
+                                        <i class="fas fa-users fa-2x mb-2"></i>
+                                        <p>No employees available.</p>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="form-text">Select one or more employees for this assignment</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Due Date -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="required_due_date" class="form-label">Due Date *</label>
+                                <input type="datetime-local" class="form-control" id="required_due_date" 
+                                       name="required_due_date" required>
+                                <div class="form-text">Deadline for completing all tasks</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" name="submission_status">
+                                    <option value="P" selected>Pending</option>
+                                    <option value="IP">In Progress</option>
+                                </select>
+                                <div class="form-text">Initial assignment status</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Summary -->
+                    <div class="alert alert-info mt-3">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-info-circle fa-lg"></i>
+                            </div>
+                            <div>
+                                <h6 class="alert-heading mb-1">Assignment Summary</h6>
+                                <p class="mb-1"><strong>Selected Tasks:</strong> <span id="selectedTasksCount">0</span></p>
+                                <p class="mb-0"><strong>Assigned To:</strong> <span id="selectedEmployeesCount">0</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update selected counts
+    function updateCounts() {
+        const selectedTasks = document.querySelectorAll('.task-checkbox:checked').length;
+        const selectedEmployees = document.querySelectorAll('.employee-checkbox:checked').length;
+        
+        document.getElementById('selectedTasksCount').textContent = selectedTasks;
+        document.getElementById('selectedEmployeesCount').textContent = selectedEmployees;
+    }
+    
+    // Add event listeners to checkboxes
+    document.querySelectorAll('.task-checkbox, .employee-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateCounts);
+    });
+    
+    // Set minimum date to today
+    const today = new Date().toISOString().slice(0, 16);
+    document.getElementById('required_due_date').min = today;
+    
+    // Validate form before submission
+    const addForm = document.querySelector('#addAssignmentModal form');
+    if (addForm) {
+        addForm.addEventListener('submit', function(e) {
+            const selectedTasks = document.querySelectorAll('.task-checkbox:checked').length;
+            const selectedEmployees = document.querySelectorAll('.employee-checkbox:checked').length;
+            
+            if (selectedTasks === 0) {
+                e.preventDefault();
+                alert('Please select at least one task.');
+                return false;
+            }
+            
+            if (selectedEmployees === 0) {
+                e.preventDefault();
+                alert('Please assign to at least one employee.');
+                return false;
+            }
+            
+            return true;
+        });
+    }
+});
+</script>

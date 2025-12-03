@@ -1,0 +1,91 @@
+<!-- Edit Assignment Modal -->
+<div class="modal fade" id="editAssignmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Assignment #<span id="edit_assignment_id"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" id="editAssignmentForm">
+                {% csrf_token %}
+                <input type="hidden" name="id" id="edit_assignment_hidden_id">
+                <div class="modal-body">
+                    <!-- Tasks Section -->
+                    <div class="mb-4">
+                        <label class="form-label">Tasks</label>
+                        <div class="form-control p-2" style="height: 150px; overflow-y: auto;" id="editTasksContainer">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                        <div class="form-text">Currently assigned tasks</div>
+                    </div>
+                    
+                    <!-- Workers Section -->
+                    <div class="mb-4">
+                        <label class="form-label">Assigned Employees</label>
+                        <div class="form-control p-2" style="height: 150px; overflow-y: auto;" id="editWorkersContainer">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                        <div class="form-text">Currently assigned employees</div>
+                    </div>
+                    
+                    <!-- Due Date and Status -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_required_due_date" class="form-label">Due Date *</label>
+                                <input type="datetime-local" class="form-control" id="edit_required_due_date" 
+                                       name="required_due_date" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_submission_status" class="form-label">Status</label>
+                                <select class="form-select" id="edit_submission_status" name="submission_status">
+                                    <option value="P">Pending</option>
+                                    <option value="IP">In Progress</option>
+                                    <option value="OT">On Time Completed</option>
+                                    <option value="L">Late Completed</option>
+                                    <option value="D">Overdue</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Completion Date (if completed) -->
+                    <div class="mb-3" id="completionDateSection" style="display: none;">
+                        <label for="edit_actual_completion_date" class="form-label">Completion Date</label>
+                        <input type="datetime-local" class="form-control" id="edit_actual_completion_date" 
+                               name="actual_completion_date">
+                        <div class="form-text">Date when assignment was completed</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show/hide completion date based on status
+    const statusSelect = document.getElementById('edit_submission_status');
+    const completionSection = document.getElementById('completionDateSection');
+    
+    if (statusSelect && completionSection) {
+        function toggleCompletionDate() {
+            if (statusSelect.value === 'OT' || statusSelect.value === 'L') {
+                completionSection.style.display = 'block';
+            } else {
+                completionSection.style.display = 'none';
+            }
+        }
+        
+        statusSelect.addEventListener('change', toggleCompletionDate);
+        toggleCompletionDate(); // Initial check
+    }
+});
+</script>

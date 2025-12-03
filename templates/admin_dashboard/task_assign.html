@@ -1,0 +1,780 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Task Assignments - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <h1 class="page-title">Task Assignments</h1>
+    
+    <div class="content-card"> 
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold text-gray-800">Active Assignments ({{ total_assignments }})</h5>
+            <div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAssignmentModal">
+                    <i class="fas fa-plus me-1"></i>Create Assignment
+                </button>
+            </div>
+        </div>
+        
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>{{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Filter Section -->
+        <div class="card filter-card mb-4 border-0 shadow-sm">
+            <div class="card-body p-3">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1">Status</label>
+                        <select class="form-select form-select-sm" id="statusFilter">
+                            <option value="all">All Status</option>
+                            <option value="P">Pending</option>
+                            <option value="IP">In Progress</option>
+                            <option value="OT">On Time Completed</option>
+                            <option value="L">Late Completed</option>
+                            <option value="D">Overdue</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1">Priority</label>
+                        <select class="form-select form-select-sm" id="priorityFilter">
+                            <option value="all">All Priorities</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1">Due Date</label>
+                        <select class="form-select form-select-sm" id="dueDateFilter">
+                            <option value="all">All Dates</option>
+                            <option value="today">Today</option>
+                            <option value="tomorrow">Tomorrow</option>
+                            <option value="week">This Week</option>
+                            <option value="overdue">Overdue</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1">&nbsp;</label>
+                        <button class="btn btn-outline-secondary btn-sm w-100" id="clearFilters">
+                            <i class="fas fa-filter-circle-xmark me-1"></i>Clear Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if assignments %}
+        <div class="row g-4">
+            {% for assignment in assignments %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card assignment-card h-100 border-0 shadow-sm" 
+                     id="assignment-card-{{ assignment.id }}"
+                     data-status="{{ assignment.submission_status }}"
+                     data-priority="{% with assignment.task.all|first as first_task %}{{ first_task.priority|default:'medium' }}{% endwith %}">
+                    <div class="card-body p-4">
+                        <!-- Assignment Header -->
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <div class="d-flex align-items-center mb-1">
+                                    <div class="assignment-icon me-2 
+                                        {% if assignment.submission_status == 'D' %}bg-danger
+                                        {% elif assignment.submission_status == 'L' %}bg-warning
+                                        {% elif assignment.submission_status == 'OT' %}bg-success
+                                        {% elif assignment.submission_status == 'IP' %}bg-primary
+                                        {% else %}bg-secondary{% endif %} text-white">
+                                        <i class="fas fa-clipboard-check"></i>
+                                    </div>
+                                    <div>
+                                        <strong class="d-block">Assignment #{{ assignment.id }}</strong>
+                                        <small class="text-muted">{{ assignment.assigned_date|date:"M d, Y" }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Status Badge -->
+                            <div>
+                                {% if assignment.submission_status == 'P' %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-clock me-1"></i>Pending
+                                    </span>
+                                {% elif assignment.submission_status == 'IP' %}
+                                    <span class="badge bg-primary">
+                                        <i class="fas fa-spinner me-1"></i>In Progress
+                                    </span>
+                                {% elif assignment.submission_status == 'OT' %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>On Time
+                                    </span>
+                                {% elif assignment.submission_status == 'L' %}
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Late
+                                    </span>
+                                {% elif assignment.submission_status == 'D' %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-exclamation-circle me-1"></i>Overdue
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Tasks List -->
+                        <div class="mb-3">
+                            <h6 class="text-muted small mb-2">Tasks</h6>
+                            {% for task in assignment.task.all|slice:":3" %}
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="task-bullet me-2 
+                                    {% if task.priority == 'high' %}bg-danger
+                                    {% elif task.priority == 'medium' %}bg-warning
+                                    {% else %}bg-success{% endif %}"></div>
+                                <span class="small">{{ task.title|truncatechars:30 }}</span>
+                                {% if task.priority == 'high' %}
+                                    <span class="badge bg-danger ms-2">H</span>
+                                {% elif task.priority == 'medium' %}
+                                    <span class="badge bg-warning ms-2">M</span>
+                                {% else %}
+                                    <span class="badge bg-success ms-2">L</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            {% if assignment.task.count > 3 %}
+                            <div class="text-muted small">
+                                + {{ assignment.task.count|add:"-3" }} more task{{ assignment.task.count|add:"-3"|pluralize }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Assigned Workers -->
+                        <div class="mb-3">
+                            <h6 class="text-muted small mb-2">Assigned To</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for worker in assignment.worker.all|slice:":3" %}
+                                <div class="user-avatar-small bg-primary text-white" 
+                                     title="{{ worker.full_name }}">
+                                    {{ worker.first_name|first }}{{ worker.last_name|first }}
+                                </div>
+                                {% endfor %}
+                                {% if assignment.worker.count > 3 %}
+                                <div class="user-avatar-small bg-secondary text-white">
+                                    +{{ assignment.worker.count|add:"-3" }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Due Date & Progress -->
+                        <div class="row g-2 mb-4">
+                            <div class="col-6">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <h6 class="mb-1 {% if assignment.is_overdue %}text-danger{% else %}text-dark{% endif %}">
+                                        {{ assignment.required_due_date|date:"M d" }}
+                                    </h6>
+                                    <small class="text-muted">Due Date</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center p-2 bg-light rounded">
+                                    {% if assignment.submission_status in 'OTL' %}
+                                        <h6 class="mb-1 text-success">100%</h6>
+                                    {% else %}
+                                        {% widthratio assignment.days_passed assignment.total_days 100 as progress %}
+                                        <h6 class="mb-1">{{ progress }}%</h6>
+                                    {% endif %}
+                                    <small class="text-muted">Progress</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="btn-group w-100">
+                            <button class="btn btn-outline-primary edit-assignment-btn flex-fill" 
+                                    data-id="{{ assignment.id }}"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#editAssignmentModal">
+                                <i class="fas fa-edit me-1"></i> Edit
+                            </button>
+                            <button class="btn btn-outline-info view-assignment-btn flex-fill" 
+                                    data-id="{{ assignment.id }}"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#viewAssignmentModal">
+                                <i class="fas fa-eye me-1"></i> View
+                            </button>
+                            {% if assignment.submission_status in 'PIPD' %}
+                            <button class="btn btn-outline-success complete-btn flex-fill" 
+                                    data-id="{{ assignment.id }}"
+                                    data-title="Assignment #{{ assignment.id }}">
+                                <i class="fas fa-check me-1"></i> Complete
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Summary Statistics -->
+        <div class="stat-card mt-4">
+            <div class="row mt-4 pt-3 border-top">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 class="text-primary">{{ total_assignments }}</h4>
+                        <p class="text-muted small mb-0">
+                            <i class="fas fa-clipboard-check text-primary"></i> Total Assignments
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 class="text-danger">{{ overdue_count|default:"0" }}</h4>
+                        <p class="text-muted small mb-0">
+                            <i class="fas fa-exclamation-circle text-danger"></i> Overdue
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 class="text-primary">{{ in_progress_count|default:"0" }}</h4>
+                        <p class="text-muted small mb-0">
+                            <i class="fas fa-spinner text-primary"></i> In Progress
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 class="text-success">{{ completed_count|default:"0" }}</h4>
+                        <p class="text-muted small mb-0">
+                            <i class="fas fa-check-circle text-success"></i> Completed
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% else %}
+        <!-- Empty state -->
+        <div class="text-center py-5">
+            <i class="fas fa-clipboard-check fa-4x text-muted mb-4"></i>
+            <h4 class="text-muted">No Task Assignments</h4>
+            <p class="text-muted">Click "Create Assignment" to assign tasks to employees.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Include Modals -->
+{% include 'admin_dashboard/modals/assignment_add_modal.html' %}
+{% include 'admin_dashboard/modals/assignment_edit_modal.html' %}
+{% include 'admin_dashboard/modals/assignment_delete_modal.html' %}
+
+{% include 'admin_dashboard/modals/assignment_complete_modal.html' %}
+
+<style>
+.assignment-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.assignment-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid rgba(0,0,0,0.08);
+}
+
+.assignment-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+}
+
+.task-bullet {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.user-avatar-small {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: default;
+}
+
+.filter-card {
+    background-color: #f8f9fa;
+}
+
+.btn-group .btn {
+    border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+}
+
+.btn-group .btn:last-child {
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+}
+
+.stat-card {
+    position: sticky;
+    bottom: 0;
+    background-color: white;
+    z-index: 2;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+}
+
+.flex-fill {
+    flex: 1 1 auto;
+}
+
+/* Status-specific styling */
+.assignment-card[data-status="D"] {
+    border-left: 4px solid #dc3545;
+}
+
+.assignment-card[data-status="L"] {
+    border-left: 4px solid #ffc107;
+}
+
+.assignment-card[data-status="OT"] {
+    border-left: 4px solid #28a745;
+}
+
+.assignment-card[data-status="IP"] {
+    border-left: 4px solid #007bff;
+}
+
+.assignment-card[data-status="P"] {
+    border-left: 4px solid #6c757d;
+}
+</style>
+
+{% block extra_js %}
+<script>
+    // ========== EDIT ASSIGNMENT POPULATION ==========
+document.querySelectorAll('.edit-assignment-btn').forEach(button => {
+    button.addEventListener('click', async function() {
+        const assignmentId = this.getAttribute('data-id');
+        
+        // Fetch assignment data
+        try {
+            const response = await fetch(`/api/assignments/${assignmentId}/`);
+            const data = await response.json();
+            
+            // Populate edit modal
+            document.getElementById('edit_assignment_id').textContent = data.id;
+            document.getElementById('edit_assignment_hidden_id').value = data.id;
+            document.getElementById('edit_required_due_date').value = 
+                new Date(data.required_due_date).toISOString().slice(0, 16);
+            document.getElementById('edit_submission_status').value = data.submission_status;
+            
+            if (data.actual_completion_date) {
+                document.getElementById('edit_actual_completion_date').value = 
+                    new Date(data.actual_completion_date).toISOString().slice(0, 16);
+            }
+            
+            // Populate tasks
+            const tasksContainer = document.getElementById('editTasksContainer');
+            tasksContainer.innerHTML = data.tasks.map(task => `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="tasks" 
+                           value="${task.id}" id="edit_task_${task.id}" checked>
+                    <label class="form-check-label d-flex justify-content-between" for="edit_task_${task.id}">
+                        <span>${task.title}</span>
+                        <span class="badge ${task.priority === 'high' ? 'bg-danger' : 
+                                         task.priority === 'medium' ? 'bg-warning' : 'bg-success'}">
+                            ${task.priority}
+                        </span>
+                    </label>
+                </div>
+            `).join('');
+            
+            // Populate workers
+            const workersContainer = document.getElementById('editWorkersContainer');
+            workersContainer.innerHTML = data.workers.map(worker => `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="workers" 
+                           value="${worker.id}" id="edit_worker_${worker.id}" checked>
+                    <label class="form-check-label" for="edit_worker_${worker.id}">
+                        ${worker.full_name} (${worker.position})
+                    </label>
+                </div>
+            `).join('');
+            
+            // Update form action
+            document.getElementById('editAssignmentForm').action = `/dashboard/assignments/edit/${assignmentId}/`;
+            
+        } catch (error) {
+            console.error('Error fetching assignment data:', error);
+            alert('Failed to load assignment data. Please try again.');
+        }
+    });
+});
+
+// ========== DELETE ASSIGNMENT ==========
+document.querySelectorAll('.delete-assignment-btn').forEach(button => {
+    button.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const assignmentId = this.getAttribute('data-id');
+        const assignmentTitle = this.getAttribute('data-title');
+        
+        // Update modal
+        document.getElementById('deleteAssignmentTitle').textContent = assignmentTitle;
+        document.getElementById('deleteAssignmentForm').action = `/dashboard/assignments/delete/${assignmentId}/`;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteAssignmentModal'));
+        modal.show();
+    });
+});
+
+// ========== VIEW ASSIGNMENT ==========
+document.querySelectorAll('.view-assignment-btn').forEach(button => {
+    button.addEventListener('click', async function() {
+        const assignmentId = this.getAttribute('data-id');
+        
+        try {
+            const response = await fetch(`/api/assignments/${assignmentId}/`);
+            const data = await response.json();
+            
+            // Populate view modal
+            document.getElementById('view_id').textContent = data.id;
+            document.getElementById('view_assigned_date').textContent = 
+                new Date(data.assigned_date).toLocaleDateString();
+            document.getElementById('view_due_date').textContent = 
+                new Date(data.required_due_date).toLocaleDateString();
+            
+            if (data.actual_completion_date) {
+                document.getElementById('view_completion_date').textContent = 
+                    new Date(data.actual_completion_date).toLocaleDateString();
+            }
+            
+            // Status badge
+            const statusBadge = document.getElementById('view_status_badge');
+            const statusText = {
+                'P': 'Pending',
+                'IP': 'In Progress', 
+                'OT': 'On Time',
+                'L': 'Late',
+                'D': 'Overdue'
+            };
+            statusBadge.textContent = statusText[data.submission_status];
+            statusBadge.className = 'badge ' + 
+                (data.submission_status === 'D' ? 'bg-danger' : 
+                 data.submission_status === 'L' ? 'bg-warning' : 
+                 data.submission_status === 'OT' ? 'bg-success' : 
+                 data.submission_status === 'IP' ? 'bg-primary' : 'bg-secondary');
+            
+            // Tasks list
+            const tasksList = document.getElementById('view_tasks_list');
+            tasksList.innerHTML = data.tasks.map(task => `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${task.title}</strong>
+                        <div class="text-muted small">${task.description || 'No description'}</div>
+                    </div>
+                    <span class="badge ${task.priority === 'high' ? 'bg-danger' : 
+                                      task.priority === 'medium' ? 'bg-warning' : 'bg-success'}">
+                        ${task.priority}
+                    </span>
+                </div>
+            `).join('');
+            
+            // Workers list
+            const workersList = document.getElementById('view_workers_list');
+            workersList.innerHTML = data.workers.map(worker => `
+                <div class="list-group-item">
+                    <strong>${worker.full_name}</strong>
+                    <div class="text-muted small">${worker.position} • ${worker.email}</div>
+                </div>
+            `).join('');
+            
+            // Calculate duration
+            const assignedDate = new Date(data.assigned_date);
+            const dueDate = new Date(data.required_due_date);
+            const durationDays = Math.ceil((dueDate - assignedDate) / (1000 * 60 * 60 * 24));
+            document.getElementById('view_duration').textContent = `${durationDays} days`;
+            
+            // Calculate progress
+            const now = new Date();
+            let progress = 0;
+            let timeRemaining = '';
+            
+            if (data.submission_status === 'OT' || data.submission_status === 'L') {
+                progress = 100;
+                timeRemaining = 'Completed';
+            } else if (data.submission_status === 'D') {
+                progress = 100;
+                const overdueDays = Math.ceil((now - dueDate) / (1000 * 60 * 60 * 24));
+                timeRemaining = `${overdueDays} days overdue`;
+            } else {
+                const totalDuration = dueDate - assignedDate;
+                const elapsed = now - assignedDate;
+                progress = Math.min(95, Math.max(5, Math.round((elapsed / totalDuration) * 100)));
+                
+                const remainingDays = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+                timeRemaining = `${remainingDays} days remaining`;
+            }
+            
+            document.getElementById('view_progress_bar').style.width = `${progress}%`;
+            document.getElementById('view_progress_text').textContent = `${progress}%`;
+            document.getElementById('view_time_remaining').textContent = timeRemaining;
+            
+            // Edit button in view modal
+            document.getElementById('editFromViewBtn').onclick = function() {
+                const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewAssignmentModal'));
+                viewModal.hide();
+                
+                // Trigger edit modal
+                const editBtn = document.querySelector(`.edit-assignment-btn[data-id="${assignmentId}"]`);
+                if (editBtn) editBtn.click();
+            };
+            
+        } catch (error) {
+            console.error('Error fetching assignment details:', error);
+            alert('Failed to load assignment details.');
+        }
+    });
+});
+
+// ========== COMPLETE ASSIGNMENT ==========
+document.querySelectorAll('.complete-btn').forEach(button => {
+    button.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const assignmentId = this.getAttribute('data-id');
+        const assignmentTitle = this.getAttribute('data-title');
+        
+        // Update modal
+        document.getElementById('completeAssignmentTitle').textContent = assignmentTitle;
+        document.getElementById('completeAssignmentForm').action = `/dashboard/assignments/complete/${assignmentId}/`;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('completeAssignmentModal'));
+        modal.show();
+    });
+});
+document.addEventListener('DOMContentLoaded', function() {
+    // ========== FILTER FUNCTIONALITY ==========
+    const statusFilter = document.getElementById('statusFilter');
+    const priorityFilter = document.getElementById('priorityFilter');
+    const dueDateFilter = document.getElementById('dueDateFilter');
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    const assignmentCards = document.querySelectorAll('.assignment-card');
+    
+    function filterAssignments() {
+        const statusValue = statusFilter.value;
+        const priorityValue = priorityFilter.value;
+        const dueDateValue = dueDateFilter.value;
+        const today = new Date();
+        
+        assignmentCards.forEach(card => {
+            let show = true;
+            const cardStatus = card.getAttribute('data-status');
+            const cardPriority = card.getAttribute('data-priority');
+            
+            // Status filter
+            if (statusValue !== 'all' && cardStatus !== statusValue) {
+                show = false;
+            }
+            
+            // Priority filter
+            if (priorityValue !== 'all' && cardPriority !== priorityValue) {
+                show = false;
+            }
+            
+            // TODO: Implement due date filter logic
+            // You would need to add data-due-date attribute to cards
+            
+            if (show) {
+                card.closest('.col-md-6').style.display = 'block';
+            } else {
+                card.closest('.col-md-6').style.display = 'none';
+            }
+        });
+    }
+    
+    if (statusFilter) statusFilter.addEventListener('change', filterAssignments);
+    if (priorityFilter) priorityFilter.addEventListener('change', filterAssignments);
+    if (dueDateFilter) dueDateFilter.addEventListener('change', filterAssignments);
+    
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', function() {
+            statusFilter.value = 'all';
+            priorityFilter.value = 'all';
+            dueDateFilter.value = 'all';
+            filterAssignments();
+        });
+    }
+    
+    // ========== EDIT ASSIGNMENT FUNCTIONALITY ==========
+    document.querySelectorAll('.edit-assignment-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const assignmentId = this.getAttribute('data-id');
+            
+            // Fetch assignment data via AJAX or populate form
+            // This would require an API endpoint
+            console.log('Edit assignment:', assignmentId);
+            
+            // For now, just set the form action
+            const editForm = document.getElementById('editAssignmentForm');
+            if (editForm) {
+                editForm.action = `/dashboard/assignments/edit/${assignmentId}/`;
+            }
+        });
+    });
+    
+    // ========== VIEW ASSIGNMENT FUNCTIONALITY ==========
+    document.querySelectorAll('.view-assignment-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const assignmentId = this.getAttribute('data-id');
+            
+            // Fetch and display assignment details
+            fetch(`/dashboard/assignments/${assignmentId}/details/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Populate view modal with data
+                    document.getElementById('view_assignment_id').textContent = data.id;
+                    document.getElementById('view_assignment_date').textContent = 
+                        new Date(data.assigned_date).toLocaleDateString();
+                    document.getElementById('view_due_date').textContent = 
+                        new Date(data.required_due_date).toLocaleDateString();
+                    document.getElementById('view_completion_date').textContent = 
+                        data.actual_completion_date ? 
+                        new Date(data.actual_completion_date).toLocaleDateString() : 'Not completed';
+                    
+                    // Set status badge
+                    const statusBadge = document.getElementById('view_status_badge');
+                    statusBadge.textContent = data.get_status_display;
+                    statusBadge.className = 'badge ' + 
+                        (data.submission_status === 'D' ? 'bg-danger' : 
+                         data.submission_status === 'L' ? 'bg-warning' : 
+                         data.submission_status === 'OT' ? 'bg-success' : 
+                         data.submission_status === 'IP' ? 'bg-primary' : 'bg-secondary');
+                    
+                    // Populate tasks list
+                    const tasksList = document.getElementById('view_tasks_list');
+                    tasksList.innerHTML = '';
+                    data.tasks.forEach(task => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        li.innerHTML = `
+                            ${task.title}
+                            <span class="badge ${task.priority === 'high' ? 'bg-danger' : 
+                                               task.priority === 'medium' ? 'bg-warning' : 'bg-success'}">
+                                ${task.priority}
+                            </span>
+                        `;
+                        tasksList.appendChild(li);
+                    });
+                    
+                    // Populate workers list
+                    const workersList = document.getElementById('view_workers_list');
+                    workersList.innerHTML = '';
+                    data.workers.forEach(worker => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item';
+                        li.textContent = `${worker.full_name} (${worker.position})`;
+                        workersList.appendChild(li);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching assignment details:', error);
+                    alert('Failed to load assignment details.');
+                });
+        });
+    });
+    
+    // ========== COMPLETE ASSIGNMENT FUNCTIONALITY ==========
+    let completeModalInstance = null;
+    
+    document.querySelectorAll('.complete-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const assignmentId = this.getAttribute('data-id');
+            const assignmentTitle = this.getAttribute('data-title');
+            
+            // Update modal content
+            document.getElementById('completeAssignmentTitle').textContent = assignmentTitle;
+            document.getElementById('completeAssignmentForm').action = `/dashboard/assignments/complete/${assignmentId}/`;
+            
+            // Show the modal
+            const modalElement = document.getElementById('completeAssignmentModal');
+            if (modalElement) {
+                completeModalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                completeModalInstance.show();
+            }
+        });
+    });
+    
+    // ========== AUTO-REFRESH FOR OVERDUE ASSIGNMENTS ==========
+    function checkForOverdueUpdates() {
+        // This could refresh the page or update status badges
+        // For now, just update the UI
+        document.querySelectorAll('.assignment-card').forEach(card => {
+            const status = card.getAttribute('data-status');
+            const dueDate = card.getAttribute('data-due-date'); // You need to add this attribute
+            
+            if (status === 'P' || status === 'IP') {
+                // Check if due date has passed
+                // This is a simplified check - implement proper date comparison
+            }
+        });
+    }
+    
+    // Check every minute
+    setInterval(checkForOverdueUpdates, 60000);
+    
+    // ========== KEYBOARD SHORTCUTS ==========
+    document.addEventListener('keydown', function(e) {
+        // Close modal on Escape
+        if (e.key === 'Escape') {
+            const openModal = document.querySelector('.modal.show');
+            if (openModal) {
+                const modalInstance = bootstrap.Modal.getInstance(openModal);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            }
+        }
+        
+        // Focus on filter inputs
+        if (e.ctrlKey && e.key === 'f') {
+            e.preventDefault();
+            const filterInput = document.querySelector('.filter-card input, .filter-card select');
+            if (filterInput) filterInput.focus();
+        }
+    });
+    
+    // ========== DRAG AND DROP STATUS UPDATE (Optional) ==========
+    // You could implement drag-and-drop to change assignment status
+    // This is an advanced feature for future implementation
+});
+</script>
+{% endblock %}
+{% endblock %}

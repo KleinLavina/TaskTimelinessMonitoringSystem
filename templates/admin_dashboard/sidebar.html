@@ -1,67 +1,327 @@
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <div class="logo-icon">
-                <i class="fas fa-tachometer-alt"></i>
-            </div>
-            <h3>Admin Panel</h3>
-            <p class="text-muted small mb-0">v2.0.0</p>
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo-icon">
+            <i class="fas fa-tachometer-alt"></i>
         </div>
+        <h3>Admin Panel</h3>
+        <p class="text-muted small mb-0">v2.0.0</p>
+    </div>
+    
+    <div class="sidebar-menu">
+        <ul class="nav flex-column">
+            <!-- Dashboard -->
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'ttms_app:dashboard' %}">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            
+            <!-- Employees -->
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'ttms_app:users' %}">
+                    <i class="fas fa-users me-2"></i>
+                    <span>Employees</span>
+                </a>
+            </li>
+            
+            <!-- Task Management - Fixed Toggle -->
+            <li class="nav-item">
+                <a class="nav-link task-management-toggle" href="#taskSubmenu" 
+                   data-bs-toggle="collapse" 
+                   data-bs-target="#taskSubmenu"
+                   aria-expanded="false"
+                   aria-controls="taskSubmenu">
+                    <i class="fas fa-tasks me-2"></i>
+                    <span>Task Management</span>
+                    <i class="fas fa-chevron-down ms-auto submenu-icon"></i>
+                </a>
+                <div class="collapse" id="taskSubmenu">
+                    <ul class="nav flex-column submenu">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'ttms_app:tasks' %}">
+                                <i class="fas fa-clipboard-list me-2"></i>
+                                Task Definitions
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'ttms_app:assign' %}">
+                                <i class="fas fa-user-check me-2"></i>
+                                Task Assignments
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            
+            <!-- Analytics -->
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-chart-line me-2"></i>
+                    <span>Timeliness Analytics</span>
+                </a>
+            </li>
+            
+            <!-- Alert Logs -->
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-bell me-2"></i>
+                    <span>System Alert Logs</span>
+                </a>
+            </li>
+            
+            <!-- Settings -->
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'ttms_app:settings' %}">
+                    <i class="fas fa-cog me-2"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            
+            <!-- Divider -->
+            <li class="nav-item">
+                <hr class="sidebar-divider">
+            </li>
+            
+            <!-- Logout -->
+            <li class="nav-item">
+                <a class="nav-link text-danger" href="#">
+                    <i class="fas fa-sign-out-alt me-2"></i>
+                    <span>Logout</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</aside>
+
+<style>
+/* Compact Sidebar */
+.sidebar {
+    background-color: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    min-height: 100vh;
+    padding: 0;
+}
+
+.sidebar-header {
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+    background-color: #fff;
+}
+
+.logo-icon {
+    color: #3498db;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #2c3e50;
+}
+
+/* Menu Items - Compact */
+.sidebar-menu {
+    padding: 0.75rem 0;
+}
+
+.sidebar-menu .nav-item {
+    margin-bottom: 0;
+}
+
+.sidebar-menu .nav-link {
+    color: #495057;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.sidebar-menu .nav-link:hover {
+    background-color: #e9ecef;
+    color: #2c3e50;
+    text-decoration: none;
+    border-left-color: #adb5bd;
+}
+
+.sidebar-menu .nav-link.active {
+    background-color: #e3f2fd;
+    color: #3498db;
+    border-left-color: #3498db;
+    font-weight: 500;
+}
+
+/* Submenu - Compact */
+.task-management-toggle {
+    position: relative;
+}
+
+.submenu-icon {
+    font-size: 0.75rem;
+    transition: transform 0.2s;
+}
+
+.task-management-toggle[aria-expanded="true"] .submenu-icon {
+    transform: rotate(180deg);
+}
+
+.submenu {
+    background-color: rgba(0, 0, 0, 0.02);
+    border-left: 2px solid #e9ecef;
+    margin-left: 1.5rem;
+    padding: 0.25rem 0;
+}
+
+.submenu .nav-link {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    color: #6c757d;
+    border-left: none;
+}
+
+.submenu .nav-link:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+    color: #495057;
+}
+
+.submenu .nav-link.active {
+    color: #3498db;
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+/* Divider */
+.sidebar-divider {
+    margin: 0.75rem 1rem;
+    opacity: 0.25;
+}
+
+/* Icon colors (original palette) */
+.fa-tachometer-alt { color: #6c757d; }
+.fa-users { color: #28a745; }
+.fa-tasks { color: #3498db; }
+.fa-clipboard-list { color: #20c997; }
+.fa-user-check { color: #ffc107; }
+.fa-chart-line { color: #17a2b8; }
+.fa-bell { color: #e74c3c; }
+.fa-cog { color: #6c757d; }
+.fa-sign-out-alt { color: #e74c3c; }
+
+/* Ensure submenu doesn't push content */
+#taskSubmenu {
+    overflow: hidden;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the collapse with proper toggle behavior
+    const taskSubmenu = document.getElementById('taskSubmenu');
+    const toggleBtn = document.querySelector('.task-management-toggle');
+    
+    if (taskSubmenu && toggleBtn) {
+        // Load saved state
+        const savedState = localStorage.getItem('taskSubmenuState');
+        if (savedState === 'show') {
+            // Initialize collapse and show it
+            const bsCollapse = new bootstrap.Collapse(taskSubmenu, {
+                toggle: false
+            });
+            bsCollapse.show();
+            toggleBtn.setAttribute('aria-expanded', 'true');
+        }
         
-        <div class="sidebar-menu py-3">
-            <ul class="nav flex-column">
-                <!-- Use Django URL tags with namespace -->
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'ttms_app:dashboard' %}">
-                        <i class="fas fa-tachometer-alt me-2"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-                
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'ttms_app:users' %}">
-                        <i class="fas fa-users me-2"></i>
-                        <span>Employees</span>
-                    </a>
-                </li>
-                
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'ttms_app:tasks' %}">
-                        <i class="fas fa-box me-2"></i>
-                        <span>Task Definitions</span>
-                    </a>
-                </li>
-                
-                <li class="nav-item">
-                    <a class="nav-link" href="">
-                        <i class="fas fa-shopping-cart me-2"></i>
-                        <span>Timeliness Analytics</span>
-                    </a>
-                </li>
-                
-                <li class="nav-item">
-                    <a class="nav-link" href="">
-                        <i class="fas fa-chart-bar me-2"></i>
-                        <span>System Alert Logs</span>
-                    </a>
-                </li>
-                
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'ttms_app:settings' %}">
-                        <i class="fas fa-cog me-2"></i>
-                        <span>Settings</span>
-                    </a>
-                </li>
-                
-                <li class="nav-item mt-4">
-                    <hr class="dropdown-divider">
-                </li>
-                
-                <li class="nav-item">
-                    <a class="nav-link text-danger" href="">
-                        <i class="fas fa-sign-out-alt me-2"></i>
-                        <span>Logout</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </aside>
+        // Listen for collapse events
+        taskSubmenu.addEventListener('show.bs.collapse', function() {
+            localStorage.setItem('taskSubmenuState', 'show');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+        });
+        
+        taskSubmenu.addEventListener('hide.bs.collapse', function() {
+            localStorage.setItem('taskSubmenuState', 'hide');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+        });
+        
+        // Prevent default only for the toggle button
+        toggleBtn.addEventListener('click', function(e) {
+            if (this.getAttribute('href') === '#taskSubmenu') {
+                e.preventDefault();
+            }
+        });
+    }
+    
+    // Highlight current page
+    const currentUrl = window.location.pathname;
+    document.querySelectorAll('.sidebar-menu .nav-link[href]').forEach(function(link) {
+        const href = link.getAttribute('href');
+        // Skip the toggle button
+        if (href === '#taskSubmenu') return;
+        
+        if (href && currentUrl === href) {
+            link.classList.add('active');
+            
+            // Expand parent submenu if this is a submenu item
+            const parentSubmenu = link.closest('.collapse');
+            if (parentSubmenu && !parentSubmenu.classList.contains('show')) {
+                const bsCollapse = bootstrap.Collapse.getInstance(parentSubmenu) || 
+                                 new bootstrap.Collapse(parentSubmenu);
+                bsCollapse.show();
+            }
+        }
+    });
+    
+    // =============================================
+    // AGGRESSIVE FORCED REFRESH ON ALL NAVIGATION LINKS
+    // =============================================
+    
+    // Select all navigation links except the toggle button
+    document.querySelectorAll('.sidebar-menu .nav-link[href]:not([href="#taskSubmenu"])').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            const originalHref = this.getAttribute('href');
+            
+            // Skip hash links (#) - these are for non-functional menu items
+            if (!originalHref || originalHref === '#') {
+                e.preventDefault();
+                return;
+            }
+            
+            // Prevent default navigation
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Add timestamp to bypass ALL caching
+            const timestamp = new Date().getTime();
+            let finalUrl = originalHref;
+            
+            // Add cache-busting parameter
+            if (originalHref.includes('?')) {
+                finalUrl = originalHref + '&_t=' + timestamp;
+            } else {
+                finalUrl = originalHref + '?_t=' + timestamp;
+            }
+            
+            // Force a full page refresh with cache busting
+            console.log('Forcing refresh to:', finalUrl);
+            window.location.href = finalUrl;
+        });
+    });
+    
+    // Close submenu when clicking on a submenu item (optional)
+    document.querySelectorAll('.submenu .nav-link').forEach(function(subItem) {
+        subItem.addEventListener('click', function() {
+            // On mobile, you might want to close the submenu after selection
+            if (window.innerWidth <= 768) {
+                const taskSubmenu = document.getElementById('taskSubmenu');
+                if (taskSubmenu && taskSubmenu.classList.contains('show')) {
+                    const bsCollapse = bootstrap.Collapse.getInstance(taskSubmenu);
+                    if (bsCollapse) bsCollapse.hide();
+                }
+            }
+        });
+    });
+});
+</script>
