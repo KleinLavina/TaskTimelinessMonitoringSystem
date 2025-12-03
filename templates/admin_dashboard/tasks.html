@@ -32,8 +32,8 @@
         <div class="row g-4">
             {% for task in tasks %}
             <div class="col-md-6 col-lg-4">
-                <div class="card task-card h-100 border-0 shadow-sm" id="task-card-{{ task.id }}">
-                    <div class="card-body p-4">
+                <div class="card task-card h-100 border-0 shadow-sm" id="task-card-{{ task.id }}" style="max-height: 400px;">
+                    <div class="card-body p-4 d-flex flex-column">
                         <!-- Task Header -->
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div class="d-flex align-items-center">
@@ -70,10 +70,10 @@
                         </div>
                         
                         <!-- Task Description -->
-                        <div class="mb-4">
+                        <div class="mb-3 flex-grow-1">
                             <h6 class="text-muted small mb-2">Description</h6>
                             {% if task.description %}
-                                <p class="card-text text-muted small mb-0 task-description">
+                                <p class="card-text text-muted small mb-0 task-description" style="max-height: 80px; overflow: hidden;">
                                     {{ task.description|truncatechars:150 }}
                                 </p>
                             {% else %}
@@ -82,7 +82,7 @@
                         </div>
                         
                         <!-- Task Details -->
-                        <div class="row g-3 mb-4">
+                        <div class="row g-3 mb-3">
                             <div class="col-6">
                                 <div class="text-center p-2 bg-light rounded">
                                     <h5 class="mb-1 text-primary">{{ task.standard_duration_days }}</h5>
@@ -106,7 +106,7 @@
                         </div>
                         
                         <!-- Action Buttons -->
-                        <div class="btn-group w-100">
+                        <div class="btn-group w-100 mt-auto">
                             <button class="btn btn-outline-primary edit-btn flex-fill" 
                                     data-id="{{ task.id }}"
                                     data-title="{{ task.title }}"
@@ -195,6 +195,8 @@
 {% include 'admin_dashboard/modals/task_add_modal.html' %}
 {% include 'admin_dashboard/modals/task_edit_modal.html' %}
 {% include 'admin_dashboard/modals/task_delete_modal.html' %}
+{% include 'admin_dashboard/modals/task_view_modal.html' %}
+
 
 <style>
 .task-icon {
@@ -210,6 +212,8 @@
 .task-card {
     transition: transform 0.2s, box-shadow 0.2s;
     border: 1px solid rgba(0,0,0,0.08);
+    max-height: 400px !important; /* Added max-height */
+    overflow: hidden; /* Ensure content doesn't overflow */
 }
 .task-card:hover {
     transform: translateY(-4px);
@@ -244,11 +248,24 @@
 .flex-fill {
     flex: 1 1 auto;
 }
+
+/* Additional styles for better card layout */
+.card-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.flex-grow-1 {
+    flex-grow: 1;
+}
+.mt-auto {
+    margin-top: auto;
+}
 </style>
 
 {% block extra_js %}
 <script>
-    
+   
 document.addEventListener('DOMContentLoaded', function() {
     // ========== EDIT BUTTON FUNCTIONALITY ==========
     document.querySelectorAll('.edit-btn').forEach(button => {
@@ -271,28 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // ========== VIEW BUTTON FUNCTIONALITY ==========
-    document.querySelectorAll('.view-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const taskTitle = this.getAttribute('data-title');
-            const taskDescription = this.getAttribute('data-description');
-            const taskDuration = this.getAttribute('data-duration');
-            const taskPriority = this.getAttribute('data-priority');
-            
-            // Populate the view modal with task data
-            document.getElementById('view_task_title').textContent = taskTitle;
-            document.getElementById('view_task_description').textContent = taskDescription;
-            document.getElementById('view_task_duration').textContent = taskDuration;
-            
-            // Set priority badge
-            const priorityBadge = document.getElementById('view_task_priority');
-            priorityBadge.textContent = taskPriority.charAt(0).toUpperCase() + taskPriority.slice(1);
-            priorityBadge.className = 'badge ' + 
-                (taskPriority === 'high' ? 'bg-danger' : 
-                 taskPriority === 'medium' ? 'bg-warning' : 'bg-success');
-        });
-    });
-    
+
     // ========== DELETE BUTTON FUNCTIONALITY ==========
     let deleteModalInstance = null;
     
