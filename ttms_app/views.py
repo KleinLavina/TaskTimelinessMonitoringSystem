@@ -155,84 +155,22 @@ def delete_task_view(request, id):
     
     return redirect('ttms_app:tasks')
 
-def tasks_assign_view(request):
+
+def assignments_view(request):
     """Task Assignments page view"""
-    assignments = TaskAssignment.objects.all().order_by('-required_due_date')
+    assignments = TaskAssignment.objects.all().order_by('id')
     
-    total_assignments = assignments.count()
-    overdue_count = assignments.filter(submission_status='D').count()
-    in_progress_count = assignments.filter(submission_status='IP').count()
-    completed_count = assignments.filter(submission_status__in=['OT', 'L']).count()
-    pending_count = assignments.filter(submission_status='P').count()
-    
-    # Get available tasks and employees for the add modal
-    available_tasks = Task.objects.all()
-    available_employees = Employee.objects.all()
+    # Get status filter from query parameters
+    status_filter = request.GET.get('status', 'all')
+    if status_filter != 'all':
+        assignments = assignments.filter(submission_status=status_filter)
     
     context = {
-        'page_title': 'Task Assignments',
         'assignments': assignments,
-        'total_assignments': total_assignments,
-        'overdue_count': overdue_count,
-        'in_progress_count': in_progress_count,
-        'completed_count': completed_count,
-        'pending_count': pending_count,
-        'available_tasks': available_tasks,
-        'available_employees': available_employees,
-        'now': timezone.now(),
+        'now': timezone.now()  # Add current time for comparison
     }
-    return render(request, 'admin_dashboard/tasks_assign.html', context)
-
-@require_POST
-def create_task_assignment(request):
-    """Create a new task assignment"""
-    try:
-        # Get form data
-        required_due_date = request.POST.get('required_due_date')
-        tasks_json = request.POST.get('tasks')
-        workers_json = request.POST.get('workers')
-        
-        if not all([required_due_date, tasks_json, workers_json]):
-            messages.error(request, 'All fields are required')
-            return redirect('tasks_assign')
-        
-        # Parse JSON data
-        task_ids = json.loads(tasks_json)
-        worker_ids = json.loads(workers_json)
-        
-        # Validate task IDs exist
-        tasks = Task.objects.filter(id__in=task_ids)
-        if tasks.count() != len(task_ids):
-            messages.error(request, 'One or more tasks are invalid')
-            return redirect('tasks_assign')
-        
-        # Validate employee IDs exist
-        workers = Employee.objects.filter(id__in=worker_ids)
-        if workers.count() != len(worker_ids):
-            messages.error(request, 'One or more employees are invalid')
-            return redirect('tasks_assign')
-        
-        # Create the assignment
-        assignment = TaskAssignment.objects.create(
-            required_due_date=required_due_date,
-            assigned_date=timezone.now(),
-            submission_status='P'  # Pending by default
-        )
-        
-        # Add tasks and workers
-        assignment.task.set(tasks)
-        assignment.worker.set(workers)
-        
-        messages.success(request, f'Task assignment #{assignment.id} created successfully!')
-        return redirect('tasks_assign')
-        
-    except json.JSONDecodeError:
-        messages.error(request, 'Invalid data format')
-        return redirect('tasks_assign')
-    except Exception as e:
-        messages.error(request, f'Error creating assignment: {str(e)}')
-        return redirect('tasks_assign')
     
+    return render(request, 'admin_dashboard/assignment.html', context)
 def settings_view(request):
     """settings page view"""
     return render(request, 'admin_dashboard/settings.html')

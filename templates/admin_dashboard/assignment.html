@@ -1,0 +1,348 @@
+{% extends 'admin_dashboard/base.html' %}
+
+{% block title %}Task Assignments - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Task Assignments</h1>
+        <div class="d-flex gap-2">
+            <span class="badge bg-secondary">Total: {{ assignments|length }}</span>
+        </div>
+    </div>
+
+    <!-- Status Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Filter by Status</h6>
+                    <div class="btn-group" role="group">
+                        <a href="?status=all" class="btn btn-outline-secondary {% if not request.GET.status or request.GET.status == 'all' %}active{% endif %}">
+                            All
+                        </a>
+                        <a href="?status=P" class="btn btn-outline-warning {% if request.GET.status == 'P' %}active{% endif %}">
+                            Pending
+                        </a>
+                        <a href="?status=IP" class="btn btn-outline-primary {% if request.GET.status == 'IP' %}active{% endif %}">
+                            In Progress
+                        </a>
+                        <a href="?status=OT" class="btn btn-outline-success {% if request.GET.status == 'OT' %}active{% endif %}">
+                            On Time
+                        </a>
+                        <a href="?status=L" class="btn btn-outline-info {% if request.GET.status == 'L' %}active{% endif %}">
+                            Late Completed
+                        </a>
+                        <a href="?status=D" class="btn btn-outline-danger {% if request.GET.status == 'D' %}active{% endif %}">
+                            Overdue
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment Cards Grid -->
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        {% for assignment in assignments %}
+        <div class="col">
+            <div class="card h-100 assignment-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Assignment #{{ assignment.pk }}</h5>
+                    <span class="badge {% if assignment.submission_status == 'P' %}bg-warning{% elif assignment.submission_status == 'IP' %}bg-primary{% elif assignment.submission_status == 'OT' %}bg-success{% elif assignment.submission_status == 'L' %}bg-info{% elif assignment.submission_status == 'D' %}bg-danger{% endif %}">
+                        {{ assignment.get_submission_status_display }}
+                    </span>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Workers Section -->
+                    <div class="mb-3">
+                        <h6 class="card-subtitle text-muted mb-2">
+                            <i class="fas fa-users me-1"></i> Assigned Workers ({{ assignment.worker.all|length }})
+                        </h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for worker in assignment.worker.all %}
+                            <span class="badge bg-light text-dark border" title="{{ worker.full_name }} - {{ worker.department|default:'No Department' }}">
+                                {{ worker.full_name }}
+                                {% if worker.department %}
+                                <small class="text-muted">({{ worker.department }})</small>
+                                {% endif %}
+                            </span>
+                            {% empty %}
+                            <span class="text-muted">No workers assigned</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Tasks Section -->
+                    <div class="mb-3">
+                        <h6 class="card-subtitle text-muted mb-2">
+                            <i class="fas fa-tasks me-1"></i> Tasks ({{ assignment.task.all|length }})
+                        </h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for task in assignment.task.all|slice:":5" %}
+                            <span class="badge bg-secondary" title="{{ task.title }}: {{ task.description|truncatechars:50 }}">
+                                {{ task.title|truncatechars:20 }}
+                                {% if task.priority == 'high' %}
+                                <i class="fas fa-exclamation-circle text-danger"></i>
+                                {% elif task.priority == 'medium' %}
+                                <i class="fas fa-exclamation-triangle text-warning"></i>
+                                {% endif %}
+                            </span>
+                            {% endfor %}
+                            {% if assignment.task.all|length > 5 %}
+                            <span class="badge bg-light text-dark">+{{ assignment.task.all|length|add:"-5" }} more</span>
+                            {% endif %}
+                            {% if not assignment.task.all %}
+                            <span class="text-muted">No tasks assigned</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Timeline Information -->
+                    <div class="timeline-info">
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Assigned Date</small>
+                                <strong>{{ assignment.assigned_date|date:"M d, Y H:i" }}</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Required Due Date</small>
+                                <strong class="{% if assignment.required_due_date < now %}text-danger{% endif %}">
+                                    {{ assignment.required_due_date|date:"M d, Y H:i" }}
+                                </strong>
+                            </div>
+                        </div>
+                        
+                        {% if assignment.actual_completion_date %}
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <small class="text-muted d-block">Completed On</small>
+                                <strong>{{ assignment.actual_completion_date|date:"M d, Y H:i" }}</strong>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-transparent border-top-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            ID: {{ assignment.pk }}
+                        </small>
+                        <div class="actions">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#assignmentModal{{ assignment.pk }}">
+                                <i class="fas fa-eye"></i> View Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal for Assignment Details -->
+        <div class="modal fade" id="assignmentModal{{ assignment.pk }}" tabindex="-1" aria-labelledby="assignmentModalLabel{{ assignment.pk }}" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="assignmentModalLabel{{ assignment.pk }}">
+                            Assignment #{{ assignment.pk }} - Details
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Workers Assigned ({{ assignment.worker.all|length }})</h6>
+                                <ul class="list-group">
+                                    {% for worker in assignment.worker.all %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ worker.full_name }}</strong>
+                                            <div class="text-muted small">{{ worker.email }}</div>
+                                            {% if worker.role %}
+                                            <small class="text-muted">{{ worker.role }}</small>
+                                            {% endif %}
+                                        </div>
+                                        <span class="badge bg-primary rounded-pill">{{ worker.department|default:'No Dept' }}</span>
+                                    </li>
+                                    {% empty %}
+                                    <li class="list-group-item text-muted">No workers assigned</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Tasks Included ({{ assignment.task.all|length }})</h6>
+                                <ul class="list-group">
+                                    {% for task in assignment.task.all %}
+                                    <li class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong>{{ task.title }}</strong>
+                                                <div class="text-muted small">{{ task.description|truncatechars:100 }}</div>
+                                            </div>
+                                            <span class="badge {% if task.priority == 'high' %}bg-danger{% elif task.priority == 'medium' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                                {{ task.get_priority_display }}
+                                            </span>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock"></i> Standard Duration: {{ task.standard_duration_days }} day{{ task.standard_duration_days|pluralize }}
+                                            </small>
+                                        </div>
+                                    </li>
+                                    {% empty %}
+                                    <li class="list-group-item text-muted">No tasks assigned</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-subtitle mb-2 text-muted">Status</h6>
+                                        <span class="badge fs-6 {% if assignment.submission_status == 'P' %}bg-warning{% elif assignment.submission_status == 'IP' %}bg-primary{% elif assignment.submission_status == 'OT' %}bg-success{% elif assignment.submission_status == 'L' %}bg-info{% elif assignment.submission_status == 'D' %}bg-danger{% endif %}">
+                                            {{ assignment.get_submission_status_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-subtitle mb-2 text-muted">Assigned Date</h6>
+                                        <p class="mb-0">{{ assignment.assigned_date|date:"M d, Y H:i" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-subtitle mb-2 text-muted">Due Date</h6>
+                                        <p class="mb-0 {% if assignment.required_due_date < now %}text-danger{% endif %}">
+                                            {{ assignment.required_due_date|date:"M d, Y H:i" }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if assignment.actual_completion_date %}
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="alert alert-success">
+                                    <h6><i class="fas fa-check-circle"></i> Completed</h6>
+                                    <p class="mb-0">Completed on: {{ assignment.actual_completion_date|date:"M d, Y H:i" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Alert History -->
+                        {% if assignment.alerts.all %}
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6>Alert History</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Type</th>
+                                                <th>Message</th>
+                                                <th>Triggered</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for alert in assignment.alerts.all %}
+                                            <tr>
+                                                <td>
+                                                    <span class="badge 
+                                                        {% if alert.alert_type == 'WARN' %}bg-warning
+                                                        {% elif alert.alert_type == 'DUE' %}bg-info
+                                                        {% elif alert.alert_type == 'LATE' %}bg-danger
+                                                        {% elif alert.alert_type == 'CONF' %}bg-success
+                                                        {% endif %}">
+                                                        {{ alert.get_alert_type_display }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ alert.message|truncatechars:50 }}</td>
+                                                <td>{{ alert.trigger_datetime|date:"M d, Y H:i" }}</td>
+                                                <td>
+                                                    {% if alert.is_sent %}
+                                                    <span class="badge bg-success">Sent</span>
+                                                    {% else %}
+                                                    <span class="badge bg-secondary">Pending</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Task Assignments Found</h5>
+                    <p class="text-muted">There are currently no task assignments in the system.</p>
+                    {% if request.GET.status %}
+                    <a href="?status=all" class="btn btn-primary">Show All Assignments</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.assignment-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid #e0e0e0;
+}
+
+.assignment-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+.timeline-info {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.card-title {
+    color: #333;
+}
+
+.card-subtitle {
+    font-size: 0.85em;
+}
+
+.table th {
+    font-size: 0.85em;
+    font-weight: 600;
+}
+</style>
+
+{% endblock %}
