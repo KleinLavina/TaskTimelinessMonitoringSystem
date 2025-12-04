@@ -11,7 +11,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h5 class="fw-bold text-gray-800">Task Definitions ({{ total_tasks }})</h5>
             <div>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                <button class="btn btn-primary task-create-btn" data-bs-toggle="modal" data-bs-target="#addTaskModal">
                     <i class="fas fa-plus me-1"></i>Add Task Definition
                 </button>
             </div>
@@ -20,7 +20,7 @@
         {% if messages %}
         <div class="mb-4">
             {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show task-alert" role="alert">
                 <i class="fas fa-check-circle me-2"></i>{{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
@@ -29,69 +29,66 @@
         {% endif %}
         
         {% if tasks %}
-        <div class="row g-4">
+        <div class="row g-4 task-grid">
             {% for task in tasks %}
             <div class="col-md-6 col-lg-4">
-                <div class="card task-card h-100 border-0 shadow-sm" id="task-card-{{ task.id }}" style="max-height: 400px;">
+                <div class="card task-display-card h-100 border-0 shadow-sm" id="task-display-{{ task.id }}">
                     <div class="card-body p-4 d-flex flex-column">
                         <!-- Task Header -->
-                        <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex justify-content-between align-items-start mb-3 task-header">
                             <div class="d-flex align-items-center">
-                                <div class="task-icon me-2 
-                                    {% if task.priority == 'high' %}bg-danger
-                                    {% elif task.priority == 'medium' %}bg-warning
-                                    {% else %}bg-success{% endif %} text-white">
+                                <div class="task-display-icon me-2 task-icon-priority-{{ task.priority }} text-white">
                                     <i class="fas fa-tasks"></i>
                                 </div>
                                 <div>
-                                    <strong class="d-block">{{ task.title }}</strong>
-                                    <small class="text-muted">Task #{{ forloop.counter }}</small>
+                                    <strong class="d-block task-title">{{ task.title }}</strong>
+                                    <small class="text-muted task-id">Task #{{ forloop.counter }}</small>
                                 </div>
                             </div>
                             
                             <!-- Priority Badge -->
                             <div>
                                 {% if task.priority == 'high' %}
-                                    <span class="badge bg-danger">
+                                    <span class="badge bg-danger task-priority-badge">
                                         <i class="fas fa-exclamation-circle me-1"></i>High
                                     </span>
                                 {% elif task.priority == 'medium' %}
-                                    <span class="badge bg-warning">
+                                    <span class="badge bg-warning task-priority-badge">
                                         <i class="fas fa-exclamation-triangle me-1"></i>Medium
                                     </span>
                                 {% elif task.priority == 'low' %}
-                                    <span class="badge bg-success">
+                                    <span class="badge bg-success task-priority-badge">
                                         <i class="fas fa-check-circle me-1"></i>Low
                                     </span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Not Set</span>
+                                    <span class="badge bg-secondary task-priority-badge">Not Set</span>
                                 {% endif %}
                             </div>
                         </div>
                         
                         <!-- Task Description -->
-                        <div class="mb-3 flex-grow-1">
+                        <div class="mb-3 flex-grow-1 task-description-section">
                             <h6 class="text-muted small mb-2">Description</h6>
                             {% if task.description %}
-                                <p class="card-text text-muted small mb-0 task-description" style="max-height: 80px; overflow: hidden;">
+                                <p class="card-text text-muted small mb-0 task-description-content">
                                     {{ task.description|truncatechars:150 }}
                                 </p>
                             {% else %}
-                                <p class="card-text text-muted small mb-0">— No description —</p>
+                                <p class="card-text text-muted small mb-0 task-no-description">— No description —</p>
                             {% endif %}
                         </div>
                         
                         <!-- Task Details -->
-                        <div class="row g-3 mb-3">
+                        <div class="row g-3 mb-3 task-metrics">
                             <div class="col-6">
-                                <div class="text-center p-2 bg-light rounded">
-                                    <h5 class="mb-1 text-primary">{{ task.standard_duration_days }}</h5>
+                                <div class="text-center p-2 bg-light rounded task-duration-box">
+                                    <h5 class="mb-1 text-primary task-duration-value">{{ task.standard_duration_days }}</h5>
                                     <small class="text-muted">Days Duration</small>
                                 </div>
                             </div>
                             <div class="col-6">
-                                <div class="text-center p-2 bg-light rounded">
-                                    <h5 class="mb-1">
+                                <div class="text-center p-2 bg-light rounded task-priority-box">
+                                    <h5 class="mb-1 task-priority-text">
                                         {% if task.priority == 'high' %}
                                             <span class="text-danger">High</span>
                                         {% elif task.priority == 'medium' %}
@@ -106,30 +103,20 @@
                         </div>
                         
                         <!-- Action Buttons -->
-                        <div class="btn-group w-100 mt-auto">
-                            <button class="btn btn-outline-primary edit-btn flex-fill" 
-                                    data-id="{{ task.id }}"
-                                    data-title="{{ task.title }}"
-                                    data-description="{{ task.description|default:'' }}"
-                                    data-duration="{{ task.standard_duration_days }}"
-                                    data-priority="{{ task.priority }}"
+                        <div class="btn-group w-100 mt-auto task-actions">
+                            <button class="btn btn-outline-primary task-edit-btn flex-fill" 
+                                    data-task-id="{{ task.id }}"
+                                    data-task-title="{{ task.title }}"
+                                    data-task-description="{{ task.description|default:'' }}"
+                                    data-task-duration="{{ task.standard_duration_days }}"
+                                    data-task-priority="{{ task.priority }}"
                                     data-bs-toggle="modal" 
                                     data-bs-target="#editTaskModal">
                                 <i class="fas fa-edit me-1"></i> Edit
                             </button>
-                            <button class="btn btn-outline-info view-btn flex-fill" 
-                                    data-id="{{ task.id }}"
-                                    data-title="{{ task.title }}"
-                                    data-description="{{ task.description|default:'No description' }}"
-                                    data-duration="{{ task.standard_duration_days }}"
-                                    data-priority="{{ task.priority }}"
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#viewTaskModal">
-                                <i class="fas fa-eye me-1"></i> View
-                            </button>
-                            <button class="btn btn-outline-danger delete-btn flex-fill" 
-                                    data-id="{{ task.id }}"
-                                    data-title="{{ task.title }}">
+                            <button class="btn btn-outline-danger task-delete-btn flex-fill" 
+                                    data-task-id="{{ task.id }}"
+                                    data-task-title="{{ task.title }}">
                                 <i class="fas fa-trash me-1"></i> Delete
                             </button>
                         </div>
@@ -140,11 +127,11 @@
         </div>
         
         <!-- Summary Statistics -->
-        <div class="stat-card mt-4">
-            <div class="row mt-4 pt-3 border-top">
+        <div class="task-stat-card mt-4">
+            <div class="row mt-4 pt-3 border-top task-stats-row">
                 <div class="col-md-3">
-                    <div class="text-center">
-                        <h4 class="text-primary">{{ total_tasks }}</h4>
+                    <div class="text-center task-stat-item">
+                        <h4 class="text-primary task-stat-number">{{ total_tasks }}</h4>
                         <p class="text-muted small mb-0">
                             <i class="fas fa-tasks text-primary"></i> Total Tasks
                         </p>
@@ -152,8 +139,8 @@
                 </div>
                 
                 <div class="col-md-3">
-                    <div class="text-center">
-                        <h4 class="text-danger">{{ high_priority_count|default:"0" }}</h4>
+                    <div class="text-center task-stat-item">
+                        <h4 class="text-danger task-stat-number">{{ high_priority_count|default:"0" }}</h4>
                         <p class="text-muted small mb-0">
                             <i class="fas fa-exclamation-circle text-danger"></i> High Priority
                         </p>
@@ -161,8 +148,8 @@
                 </div>
                 
                 <div class="col-md-3">
-                    <div class="text-center">
-                        <h4 class="text-warning">{{ medium_priority_count|default:"0" }}</h4>
+                    <div class="text-center task-stat-item">
+                        <h4 class="text-warning task-stat-number">{{ medium_priority_count|default:"0" }}</h4>
                         <p class="text-muted small mb-0">
                             <i class="fas fa-exclamation-triangle text-warning"></i> Medium Priority
                         </p>
@@ -170,8 +157,8 @@
                 </div>
                 
                 <div class="col-md-3">
-                    <div class="text-center">
-                        <h4 class="text-success">{{ low_priority_count|default:"0" }}</h4>
+                    <div class="text-center task-stat-item">
+                        <h4 class="text-success task-stat-number">{{ low_priority_count|default:"0" }}</h4>
                         <p class="text-muted small mb-0">
                             <i class="fas fa-check-circle text-success"></i> Low Priority
                         </p>
@@ -182,10 +169,10 @@
         
         {% else %}
         <!-- Empty state -->
-        <div class="text-center py-5">
-            <i class="fas fa-clipboard-list fa-4x text-muted mb-4"></i>
-            <h4 class="text-muted">No Task Definitions</h4>
-            <p class="text-muted">Click "Add Task Definition" to create your first task template.</p>
+        <div class="text-center py-5 task-empty-state">
+            <i class="fas fa-clipboard-list fa-4x text-muted mb-4 task-empty-icon"></i>
+            <h4 class="text-muted task-empty-title">No Task Definitions</h4>
+            <p class="text-muted task-empty-text">Click "Add Task Definition" to create your first task template.</p>
         </div>
         {% endif %}
     </div>
@@ -195,11 +182,12 @@
 {% include 'admin_dashboard/modals/task_add_modal.html' %}
 {% include 'admin_dashboard/modals/task_edit_modal.html' %}
 {% include 'admin_dashboard/modals/task_delete_modal.html' %}
-{% include 'admin_dashboard/modals/task_view_modal.html' %}
+<!-- View Task Modal removed as requested -->
 
 
 <style>
-.task-icon {
+/* Task-specific styles to avoid conflicts */
+.task-display-icon {
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -209,42 +197,62 @@
     font-weight: bold;
     font-size: 14px;
 }
-.task-card {
+
+.task-display-card {
     transition: transform 0.2s, box-shadow 0.2s;
     border: 1px solid rgba(0,0,0,0.08);
-    max-height: 400px !important; /* Added max-height */
-    overflow: hidden; /* Ensure content doesn't overflow */
+    max-height: 400px !important;
+    overflow: hidden;
 }
-.task-card:hover {
+
+.task-display-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
 }
-.task-description {
+
+.task-description-content {
     line-height: 1.5;
     min-height: 40px;
+    max-height: 80px;
+    overflow: hidden;
 }
-.btn-group .btn {
-    border-radius: 0;
-}
-.btn-group .btn:first-child {
-    border-top-left-radius: 0.375rem;
-    border-bottom-left-radius: 0.375rem;
-}
-.btn-group .btn:last-child {
-    border-top-right-radius: 0.375rem;
-    border-bottom-right-radius: 0.375rem;
-}
-.stat-card {
+
+.task-stat-card {
     position: sticky;
     bottom: 0;
     background-color: white;
     z-index: 2;
     box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
 }
-.badge {
-    font-size: 0.75rem;
-    padding: 0.35em 0.65em;
+
+/* Task priority icon colors */
+.task-icon-priority-high {
+    background-color: #dc3545;
 }
+
+.task-icon-priority-medium {
+    background-color: #f59e0b;
+}
+
+.task-icon-priority-low {
+    background-color: #10b981;
+}
+
+/* Task actions */
+.task-actions .btn {
+    border-radius: 0;
+}
+
+.task-actions .btn:first-child {
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+}
+
+.task-actions .btn:last-child {
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+}
+
 .flex-fill {
     flex: 1 1 auto;
 }
@@ -255,26 +263,81 @@
     flex-direction: column;
     height: 100%;
 }
+
 .flex-grow-1 {
     flex-grow: 1;
 }
+
 .mt-auto {
     margin-top: auto;
+}
+
+/* Task stats */
+.task-stat-item {
+    padding: 0.5rem;
+}
+
+.task-stat-number {
+    margin-bottom: 0.5rem;
+}
+
+.task-stats-row {
+    padding-top: 1rem;
+}
+
+/* Task grid */
+.task-grid {
+    margin-bottom: 1rem;
+}
+
+/* Task empty state */
+.task-empty-state {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 3rem 1rem;
+}
+
+.task-empty-icon {
+    margin-bottom: 1.5rem;
+}
+
+.task-empty-title {
+    margin-bottom: 0.5rem;
+}
+
+.task-empty-text {
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+/* Task alerts */
+.task-alert {
+    margin-bottom: 1.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .task-display-card {
+        max-height: none !important;
+    }
+    
+    .task-description-content {
+        max-height: none;
+    }
 }
 </style>
 
 {% block extra_js %}
 <script>
-   
 document.addEventListener('DOMContentLoaded', function() {
-    // ========== EDIT BUTTON FUNCTIONALITY ==========
-    document.querySelectorAll('.edit-btn').forEach(button => {
+    // ========== TASK EDIT BUTTON FUNCTIONALITY ==========
+    document.querySelectorAll('.task-edit-btn').forEach(button => {
         button.addEventListener('click', function() {
-            const taskId = this.getAttribute('data-id');
-            const taskTitle = this.getAttribute('data-title');
-            const taskDescription = this.getAttribute('data-description') || '';
-            const taskDuration = this.getAttribute('data-duration');
-            const taskPriority = this.getAttribute('data-priority');
+            const taskId = this.getAttribute('data-task-id');
+            const taskTitle = this.getAttribute('data-task-title');
+            const taskDescription = this.getAttribute('data-task-description') || '';
+            const taskDuration = this.getAttribute('data-task-duration');
+            const taskPriority = this.getAttribute('data-task-priority');
             
             // Populate the edit form with current task data
             document.getElementById('edit_task_id').value = taskId;
@@ -284,51 +347,65 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('edit_priority').value = taskPriority;
             
             // Update form action URL
-            document.getElementById('editTaskForm').action = `/dashboard/tasks/edit/${taskId}/`;
+            const editForm = document.getElementById('editTaskForm');
+            if (editForm) {
+                editForm.action = `/dashboard/tasks/edit/${taskId}/`;
+            }
         });
     });
     
 
-    // ========== DELETE BUTTON FUNCTIONALITY ==========
-    let deleteModalInstance = null;
-    
-    document.querySelectorAll('.delete-btn').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const taskId = this.getAttribute('data-id');
-            const taskTitle = this.getAttribute('data-title');
-            
-            // Update modal content
-            document.getElementById('deleteTaskTitle').textContent = taskTitle;
-            document.getElementById('deleteTaskForm').action = `/dashboard/tasks/delete/${taskId}/`;
-            
-            // Get modal element
-            const modalElement = document.getElementById('deleteTaskModal');
-            
-            // Check if modal is already shown
-            if (modalElement.classList.contains('show')) {
-                return; // Modal is already open
-            }
-            
-            // Create a new modal instance or get existing one
-            deleteModalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
-            
-            // Show the modal
-            deleteModalInstance.show();
+   // ========== TASK DELETE BUTTON FUNCTIONALITY ==========
+document.querySelectorAll('.task-delete-btn').forEach(button => {
+    button.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const taskId = this.getAttribute('data-task-id');
+        const taskTitle = this.getAttribute('data-task-title');
+        
+        // Update modal content
+        const deleteTitleElement = document.getElementById('deleteTaskTitle');
+        const deleteForm = document.getElementById('deleteTaskForm');
+        
+        if (deleteTitleElement) {
+            deleteTitleElement.textContent = taskTitle;
+        }
+        
+        if (deleteForm) {
+            // Set the form action URL
+            deleteForm.action = `/dashboard/tasks/delete/${taskId}/`;
+        }
+        
+        // Get modal element and show it
+        const modalElement = document.getElementById('deleteTaskModal');
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
             
             // Highlight the card being deleted
-            const taskCard = document.getElementById(`task-card-${taskId}`);
+            const taskCard = document.getElementById(`task-display-${taskId}`);
             if (taskCard) {
                 taskCard.classList.add('border-danger');
             }
+        }
+    });
+});
+
+// ========== CLEAN UP MODAL HIGHLIGHT ==========
+const deleteModalElement = document.getElementById('deleteTaskModal');
+if (deleteModalElement) {
+    deleteModalElement.addEventListener('hidden.bs.modal', function() {
+        // Remove border highlighting from all cards
+        document.querySelectorAll('.task-display-card').forEach(card => {
+            card.classList.remove('border-danger');
         });
     });
-    
-    // ========== DELETE FORM SUBMISSION ==========
-    const deleteForm = document.getElementById('deleteTaskForm');
-    if (deleteForm) {
-        deleteForm.addEventListener('submit', function(e) {
+}
+
+    // ========== TASK DELETE FORM SUBMISSION ==========
+    const taskDeleteForm = document.getElementById('deleteTaskForm');
+    if (taskDeleteForm) {
+        taskDeleteForm.addEventListener('submit', function(e) {
             const deleteBtn = this.querySelector('button[type="submit"]');
             const originalText = deleteBtn.innerHTML;
             
@@ -366,9 +443,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ========== MODAL BACKDROP CLEANUP ==========
     // Clean up backdrop when modal is hidden
-    const deleteModalElement = document.getElementById('deleteTaskModal');
-    if (deleteModalElement) {
-        deleteModalElement.addEventListener('hidden.bs.modal', function() {
+    const taskDeleteModalElement = document.getElementById('deleteTaskModal');
+    if (taskDeleteModalElement) {
+        taskDeleteModalElement.addEventListener('hidden.bs.modal', function() {
             setTimeout(() => {
                 const backdrop = document.querySelector('.modal-backdrop');
                 if (backdrop) {
@@ -379,7 +456,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.body.style.paddingRight = '';
                 
                 // Remove border highlighting from all cards
-                document.querySelectorAll('.task-card').forEach(card => {
+                document.querySelectorAll('.task-display-card').forEach(card => {
                     card.classList.remove('border-danger');
                 });
             }, 50);
@@ -403,8 +480,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // ========== AUTO-CLOSE ALERTS ==========
-    document.querySelectorAll('.alert').forEach(alert => {
+    // ========== AUTO-CLOSE TASK ALERTS ==========
+    document.querySelectorAll('.task-alert').forEach(alert => {
         setTimeout(() => {
             const bsAlert = new bootstrap.Alert(alert);
             bsAlert.close();
@@ -412,19 +489,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // ========== UNSAVED CHANGES WARNING ==========
-    let formChanged = false;
-    const editForm = document.getElementById('editTaskForm');
+    let taskFormChanged = false;
+    const taskEditForm = document.getElementById('editTaskForm');
     
-    if (editForm) {
-        editForm.querySelectorAll('input, textarea, select').forEach(input => {
+    if (taskEditForm) {
+        taskEditForm.querySelectorAll('input, textarea, select').forEach(input => {
             input.addEventListener('change', function() {
-                formChanged = true;
+                taskFormChanged = true;
             });
         });
     }
     
     window.addEventListener('beforeunload', function(e) {
-        if (formChanged) {
+        if (taskFormChanged) {
             e.preventDefault();
             e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
         }
@@ -432,7 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('hidden.bs.modal', function() {
-            formChanged = false;
+            taskFormChanged = false;
         });
     });
     
@@ -453,20 +530,23 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.ctrlKey && e.key === 'Enter') {
             const editModal = document.getElementById('editTaskModal');
             if (editModal && editModal.classList.contains('show')) {
-                document.getElementById('editTaskForm').submit();
+                const editForm = document.getElementById('editTaskForm');
+                if (editForm) {
+                    editForm.submit();
+                }
             }
         }
     });
     
-    // ========== PRIORITY BADGE COLOR UPDATE ==========
-    const prioritySelects = document.querySelectorAll('select[name="priority"]');
-    prioritySelects.forEach(select => {
+    // ========== TASK PRIORITY BADGE COLOR UPDATE ==========
+    const taskPrioritySelects = document.querySelectorAll('select[name="priority"]');
+    taskPrioritySelects.forEach(select => {
         select.addEventListener('change', function() {
             const selectedValue = this.value;
-            const badge = this.parentElement.querySelector('.badge');
+            const badge = this.parentElement.querySelector('.task-priority-badge');
             if (badge) {
                 badge.textContent = selectedValue.charAt(0).toUpperCase() + selectedValue.slice(1);
-                badge.className = 'badge ' + 
+                badge.className = 'badge task-priority-badge ' + 
                     (selectedValue === 'high' ? 'bg-danger' : 
                      selectedValue === 'medium' ? 'bg-warning' : 'bg-success');
             }

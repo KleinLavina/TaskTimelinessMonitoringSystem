@@ -7,6 +7,8 @@ from gettext import translation
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+import json
 from .models import Employee, Task, TaskAssignment
 
 def dashboard_view(request):
@@ -153,18 +155,6 @@ def delete_task_view(request, id):
     
     return redirect('ttms_app:tasks')
 
-def get_task_data(request, id):
-    """Get task data for editing (AJAX)"""
-    task = get_object_or_404(Task, id=id)
-    data = {
-        'id': task.id,
-        'title': task.title,
-        'description': task.description,
-        'standard_duration_days': task.standard_duration_days,
-        'priority': task.priority,
-    }
-    return JsonResponse(data)
-
 def tasks_assign_view(request):
     """Task Assignments page view"""
     assignments = TaskAssignment.objects.all().order_by('-required_due_date')
@@ -193,7 +183,56 @@ def tasks_assign_view(request):
     }
     return render(request, 'admin_dashboard/tasks_assign.html', context)
 
-
+@require_POST
+def create_task_assignment(request):
+    """Create a new task assignment"""
+    try:
+        # Get form data
+        required_due_date = request.POST.get('required_due_date')
+        tasks_json = request.POST.get('tasks')
+        workers_json = request.POST.get('workers')
+        
+        if not all([required_due_date, tasks_json, workers_json]):
+            messages.error(request, 'All fields are required')
+            return redirect('tasks_assign')
+        
+        # Parse JSON data
+        task_ids = json.loads(tasks_json)
+        worker_ids = json.loads(workers_json)
+        
+        # Validate task IDs exist
+        tasks = Task.objects.filter(id__in=task_ids)
+        if tasks.count() != len(task_ids):
+            messages.error(request, 'One or more tasks are invalid')
+            return redirect('tasks_assign')
+        
+        # Validate employee IDs exist
+        workers = Employee.objects.filter(id__in=worker_ids)
+        if workers.count() != len(worker_ids):
+            messages.error(request, 'One or more employees are invalid')
+            return redirect('tasks_assign')
+        
+        # Create the assignment
+        assignment = TaskAssignment.objects.create(
+            required_due_date=required_due_date,
+            assigned_date=timezone.now(),
+            submission_status='P'  # Pending by default
+        )
+        
+        # Add tasks and workers
+        assignment.task.set(tasks)
+        assignment.worker.set(workers)
+        
+        messages.success(request, f'Task assignment #{assignment.id} created successfully!')
+        return redirect('tasks_assign')
+        
+    except json.JSONDecodeError:
+        messages.error(request, 'Invalid data format')
+        return redirect('tasks_assign')
+    except Exception as e:
+        messages.error(request, f'Error creating assignment: {str(e)}')
+        return redirect('tasks_assign')
+    
 def settings_view(request):
     """settings page view"""
     return render(request, 'admin_dashboard/settings.html')

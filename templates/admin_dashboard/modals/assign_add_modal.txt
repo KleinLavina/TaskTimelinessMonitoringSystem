@@ -1,0 +1,611 @@
+<!-- Add Assignment Modal -->
+<div class="modal fade" id="addAssignmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0" style="max-height: 85vh; overflow-y: auto;">
+            <!-- Header -->
+            <div class="modal-header bg-assignment-warning text-dark border-0 py-3">
+                <div class="modal-title">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="fas fa-clipboard-check me-2"></i>Create New Assignment
+                    </h6>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form method="POST" id="addAssignmentForm" class="assignment-add-form">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <!-- Grid Layout -->
+                    <div class="row g-3">
+                        <!-- Due Date - Full width -->
+                        <div class="col-12">
+                            <label for="add_required_due_date" class="form-label small fw-medium text-dark mb-1">Required Due Date *</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-assignment-light border-end-0 px-3">
+                                    <i class="fas fa-calendar-alt text-assignment-warning" style="font-size: 0.85rem;"></i>
+                                </span>
+                                <input type="datetime-local" class="form-control form-control-sm" id="add_required_due_date" 
+                                       name="required_due_date" required>
+                            </div>
+                            <div class="form-text small text-muted mt-1">
+                                <i class="fas fa-clock me-1" style="font-size: 0.75rem;"></i>Final deadline for all tasks
+                            </div>
+                        </div>
+                        
+                        <!-- Tasks Selection - Scrollable -->
+                        <div class="col-12 mt-3">
+                            <label class="form-label small fw-medium text-dark mb-1">Select Tasks *</label>
+                            <div class="input-group input-group-sm mb-2">
+                                <span class="input-group-text bg-assignment-light border-end-0 px-3">
+                                    <i class="fas fa-tasks text-assignment-warning" style="font-size: 0.85rem;"></i>
+                                </span>
+                                <select class="form-select form-select-sm" id="taskSearchSelect">
+                                    <option value="">Search and add tasks...</option>
+                                    {% for task in available_tasks %}
+                                    <option value="{{ task.id }}" 
+                                            data-title="{{ task.title }}"
+                                            data-duration="{{ task.standard_duration_days }}"
+                                            data-priority="{{ task.priority }}">
+                                        {{ task.title }} ({{ task.standard_duration_days }} days, {{ task.priority }})
+                                    </option>
+                                    {% empty %}
+                                    <option value="" disabled>No tasks available</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" class="btn btn-assignment-outline btn-sm" id="addTaskBtn">
+                                    <i class="fas fa-plus" style="font-size: 0.85rem;"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Selected Tasks Container -->
+                            <div class="selected-tasks-container border rounded bg-light p-3" style="max-height: 200px; overflow-y: auto;">
+                                <div class="d-flex flex-column gap-2" id="selectedTasksList">
+                                    <!-- Selected tasks will appear here -->
+                                    <div class="text-center text-muted py-3" id="noTasksMessage">
+                                        <i class="fas fa-tasks fa-lg mb-2"></i>
+                                        <p class="small mb-0">No tasks selected yet</p>
+                                        <small class="text-muted">Select tasks from dropdown above</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="tasks" id="selectedTasksInput" value="">
+                        </div>
+                        
+                        <!-- Employees Selection - Scrollable with Add button -->
+                        <div class="col-12 mt-3">
+                            <label class="form-label small fw-medium text-dark mb-1">Assign Employees *</label>
+                            <div class="input-group input-group-sm mb-2">
+                                <span class="input-group-text bg-assignment-light border-end-0 px-3">
+                                    <i class="fas fa-users text-assignment-warning" style="font-size: 0.85rem;"></i>
+                                </span>
+                                <select class="form-select form-select-sm" id="employeeSearchSelect">
+                                    <option value="">Search and add employees...</option>
+                                    {% for employee in available_employees %}
+                                    <option value="{{ employee.id }}" 
+                                            data-name="{{ employee.full_name }}"
+                                            data-email="{{ employee.email }}"
+                                            data-department="{{ employee.department|default:'N/A' }}">
+                                        {{ employee.full_name }} - {{ employee.department|default:"No Department" }}
+                                    </option>
+                                    {% empty %}
+                                    <option value="" disabled>No employees available</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" class="btn btn-assignment-outline btn-sm" id="addEmployeeBtn">
+                                    <i class="fas fa-plus" style="font-size: 0.85rem;"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Selected Employees Container - Scrollable -->
+                            <div class="selected-employees-container border rounded bg-light p-3" 
+                                 style="max-height: 200px; overflow-y: auto; overflow-x: hidden;">
+                                <div class="d-flex flex-column gap-3" id="selectedEmployeesList">
+                                    <!-- Selected employees will appear here -->
+                                    <div class="text-center text-muted py-3" id="noEmployeesMessage">
+                                        <i class="fas fa-users fa-lg mb-2"></i>
+                                        <p class="small mb-0">No employees selected yet</p>
+                                        <small class="text-muted">Select employees from dropdown above</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="workers" id="selectedEmployeesInput" value="">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="modal-footer border-top pt-3 pb-4 px-4">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-assignment-warning btn-sm px-4">
+                        <i class="fas fa-plus-circle me-1" style="font-size: 0.85rem;"></i>Create Assignment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Assignment Modal Specific Styling */
+:root {
+    --assignment-warning-color: #9333ea; /* Purple for assignments */
+    --assignment-warning-dark: #7c3aed;
+    --assignment-border-color: #f3e8ff;
+    --assignment-light-color: #faf5ff;
+    --assignment-outline-color: #e9d5ff;
+}
+
+/* Modal size */
+.modal-content {
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header.bg-assignment-warning {
+    background: linear-gradient(135deg, var(--assignment-warning-color) 0%, var(--assignment-warning-dark) 100%);
+}
+
+/* Form elements styling */
+.assignment-add-form .form-label {
+    font-size: 0.8rem;
+    margin-bottom: 0.4rem;
+    color: #1f2937;
+}
+
+.assignment-add-form .form-control-sm,
+.assignment-add-form .form-select-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    border: 1.5px solid var(--assignment-border-color);
+    border-radius: 8px;
+    line-height: 1.4;
+}
+
+.assignment-add-form .form-control-sm:focus,
+.assignment-add-form .form-select-sm:focus {
+    border-color: var(--assignment-warning-color);
+    box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.1);
+    outline: none;
+}
+
+.assignment-add-form .input-group-sm .input-group-text {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    border: 1.5px solid var(--assignment-border-color);
+    background-color: var(--assignment-light-color);
+}
+
+.assignment-add-form .input-group-text .text-assignment-warning {
+    color: var(--assignment-warning-color) !important;
+}
+
+.bg-assignment-light {
+    background-color: var(--assignment-light-color) !important;
+}
+
+.text-assignment-warning {
+    color: var(--assignment-warning-color) !important;
+}
+
+/* Buttons */
+.btn-assignment-warning {
+    background-color: var(--assignment-warning-color);
+    border-color: var(--assignment-warning-color);
+    color: white;
+}
+
+.btn-assignment-warning:hover {
+    background-color: var(--assignment-warning-dark);
+    border-color: var(--assignment-warning-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(147, 51, 234, 0.2);
+}
+
+.btn-assignment-outline {
+    border-color: var(--assignment-outline-color);
+    color: var(--assignment-warning-color);
+}
+
+.btn-assignment-outline:hover {
+    background-color: var(--assignment-light-color);
+    border-color: var(--assignment-warning-color);
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+/* Selected Items Styling */
+.selected-tasks-container,
+.selected-employees-container {
+    border: 1.5px solid var(--assignment-border-color) !important;
+    background-color: var(--assignment-light-color) !important;
+}
+
+.selected-tasks-container::-webkit-scrollbar,
+.selected-employees-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.selected-tasks-container::-webkit-scrollbar-track,
+.selected-employees-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.selected-tasks-container::-webkit-scrollbar-thumb,
+.selected-employees-container::-webkit-scrollbar-thumb {
+    background: var(--assignment-warning-color);
+    border-radius: 4px;
+}
+
+.selected-tasks-container::-webkit-scrollbar-thumb:hover,
+.selected-employees-container::-webkit-scrollbar-thumb:hover {
+    background: var(--assignment-warning-dark);
+}
+
+/* Task/Employee Item Styling */
+.task-item-card {
+    background: white;
+    border: 1px solid var(--assignment-border-color);
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.task-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.employee-item-card {
+    background: white;
+    border: 1px solid var(--assignment-border-color);
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.employee-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Priority Badges */
+.badge-priority-high {
+    background-color: #dc3545;
+    color: white;
+}
+
+.badge-priority-medium {
+    background-color: #ffc107;
+    color: black;
+}
+
+.badge-priority-low {
+    background-color: #28a745;
+    color: white;
+}
+
+/* Employee Avatar */
+.employee-avatar-sm {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    color: white;
+    background-color: var(--assignment-warning-color);
+    flex-shrink: 0;
+}
+
+/* Remove button */
+.remove-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: none;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.remove-btn:hover {
+    background-color: #fecaca;
+    transform: scale(1.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .modal-dialog.modal-lg {
+        max-width: 90%;
+        margin: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .modal-dialog.modal-lg {
+        max-width: 95%;
+        margin: 0.5rem;
+    }
+    
+    .d-flex.flex-wrap {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize arrays to store selected items
+    let selectedTasks = [];
+    let selectedEmployees = [];
+    
+    // Task Selection Functionality
+    const taskSearchSelect = document.getElementById('taskSearchSelect');
+    const addTaskBtn = document.getElementById('addTaskBtn');
+    const selectedTasksList = document.getElementById('selectedTasksList');
+    const noTasksMessage = document.getElementById('noTasksMessage');
+    const selectedTasksInput = document.getElementById('selectedTasksInput');
+    
+    if (taskSearchSelect && addTaskBtn) {
+        addTaskBtn.addEventListener('click', function() {
+            const selectedOption = taskSearchSelect.options[taskSearchSelect.selectedIndex];
+            const taskId = selectedOption.value;
+            
+            if (!taskId) {
+                alert('Please select a task first');
+                return;
+            }
+            
+            const taskTitle = selectedOption.getAttribute('data-title');
+            const taskDuration = selectedOption.getAttribute('data-duration');
+            const taskPriority = selectedOption.getAttribute('data-priority');
+            
+            // Check if already selected
+            if (selectedTasks.includes(taskId)) {
+                alert('This task is already selected');
+                return;
+            }
+            
+            // Add to array
+            selectedTasks.push(taskId);
+            
+            // Hide "no tasks" message
+            if (noTasksMessage) {
+                noTasksMessage.style.display = 'none';
+            }
+            
+            // Create task item element
+            const taskItem = document.createElement('div');
+            taskItem.className = 'task-item-card d-flex justify-content-between align-items-center';
+            taskItem.id = `selected-task-${taskId}`;
+            
+            const priorityClass = taskPriority === 'high' ? 'badge-priority-high' : 
+                                 taskPriority === 'medium' ? 'badge-priority-medium' : 'badge-priority-low';
+            
+            taskItem.innerHTML = `
+                <div class="d-flex align-items-center gap-2">
+                    <div class="task-bullet ${priorityClass}" style="width: 8px; height: 8px; border-radius: 50%;"></div>
+                    <div>
+                        <div class="small fw-medium">${taskTitle}</div>
+                        <div class="text-muted x-small">${taskDuration} days • ${taskPriority} priority</div>
+                    </div>
+                </div>
+                <button type="button" class="remove-btn" data-id="${taskId}" data-type="task">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            // Add to list
+            selectedTasksList.appendChild(taskItem);
+            
+            // Update hidden input
+            selectedTasksInput.value = JSON.stringify(selectedTasks);
+            
+            // Reset select
+            taskSearchSelect.value = '';
+        });
+    }
+    
+    // Employee Selection Functionality
+    const employeeSearchSelect = document.getElementById('employeeSearchSelect');
+    const addEmployeeBtn = document.getElementById('addEmployeeBtn');
+    const selectedEmployeesList = document.getElementById('selectedEmployeesList');
+    const noEmployeesMessage = document.getElementById('noEmployeesMessage');
+    const selectedEmployeesInput = document.getElementById('selectedEmployeesInput');
+    
+    if (employeeSearchSelect && addEmployeeBtn) {
+        addEmployeeBtn.addEventListener('click', function() {
+            const selectedOption = employeeSearchSelect.options[employeeSearchSelect.selectedIndex];
+            const employeeId = selectedOption.value;
+            
+            if (!employeeId) {
+                alert('Please select an employee first');
+                return;
+            }
+            
+            const employeeName = selectedOption.getAttribute('data-name');
+            const employeeEmail = selectedOption.getAttribute('data-email');
+            const employeeDepartment = selectedOption.getAttribute('data-department');
+            
+            // Check if already selected
+            if (selectedEmployees.includes(employeeId)) {
+                alert('This employee is already selected');
+                return;
+            }
+            
+            // Add to array
+            selectedEmployees.push(employeeId);
+            
+            // Hide "no employees" message
+            if (noEmployeesMessage) {
+                noEmployeesMessage.style.display = 'none';
+            }
+            
+            // Create employee initials
+            const names = employeeName.split(' ');
+            const initials = (names[0]?.charAt(0) || '') + (names[1]?.charAt(0) || '');
+            
+            // Create employee item element
+            const employeeItem = document.createElement('div');
+            employeeItem.className = 'employee-item-card d-flex justify-content-between align-items-center';
+            employeeItem.id = `selected-employee-${employeeId}`;
+            
+            employeeItem.innerHTML = `
+                <div class="d-flex align-items-center gap-3">
+                    <div class="employee-avatar-sm">
+                        ${initials}
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="small fw-medium">${employeeName}</div>
+                        <div class="text-muted x-small">${employeeDepartment}</div>
+                    </div>
+                </div>
+                <button type="button" class="remove-btn" data-id="${employeeId}" data-type="employee">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            // Add to list
+            selectedEmployeesList.appendChild(employeeItem);
+            
+            // Update hidden input
+            selectedEmployeesInput.value = JSON.stringify(selectedEmployees);
+            
+            // Reset select
+            employeeSearchSelect.value = '';
+        });
+    }
+    
+    // Remove item functionality (delegated event)
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-btn')) {
+            const removeBtn = e.target.closest('.remove-btn');
+            const itemId = removeBtn.getAttribute('data-id');
+            const itemType = removeBtn.getAttribute('data-type');
+            
+            if (itemType === 'task') {
+                // Remove from array
+                selectedTasks = selectedTasks.filter(id => id !== itemId);
+                
+                // Remove from DOM
+                const taskItem = document.getElementById(`selected-task-${itemId}`);
+                if (taskItem) taskItem.remove();
+                
+                // Update hidden input
+                selectedTasksInput.value = JSON.stringify(selectedTasks);
+                
+                // Show "no tasks" message if empty
+                if (selectedTasks.length === 0 && noTasksMessage) {
+                    noTasksMessage.style.display = 'block';
+                }
+            } else if (itemType === 'employee') {
+                // Remove from array
+                selectedEmployees = selectedEmployees.filter(id => id !== itemId);
+                
+                // Remove from DOM
+                const employeeItem = document.getElementById(`selected-employee-${itemId}`);
+                if (employeeItem) employeeItem.remove();
+                
+                // Update hidden input
+                selectedEmployeesInput.value = JSON.stringify(selectedEmployees);
+                
+                // Show "no employees" message if empty
+                if (selectedEmployees.length === 0 && noEmployeesMessage) {
+                    noEmployeesMessage.style.display = 'block';
+                }
+            }
+        }
+    });
+    
+    // Form submission validation
+    const addAssignmentForm = document.getElementById('addAssignmentForm');
+    if (addAssignmentForm) {
+        addAssignmentForm.addEventListener('submit', function(e) {
+            // Validate due date is in the future
+            const dueDateInput = document.getElementById('add_required_due_date');
+            if (dueDateInput.value) {
+                const selectedDate = new Date(dueDateInput.value);
+                const now = new Date();
+                
+                if (selectedDate <= now) {
+                    e.preventDefault();
+                    alert('Due date must be in the future');
+                    dueDateInput.focus();
+                    return false;
+                }
+            }
+            
+            // Validate at least one task is selected
+            if (selectedTasks.length === 0) {
+                e.preventDefault();
+                alert('Please select at least one task');
+                taskSearchSelect.focus();
+                return false;
+            }
+            
+            // Validate at least one employee is selected
+            if (selectedEmployees.length === 0) {
+                e.preventDefault();
+                alert('Please select at least one employee');
+                employeeSearchSelect.focus();
+                return false;
+            }
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Creating...';
+            submitBtn.disabled = true;
+            
+            // Re-enable after 5 seconds if something goes wrong
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 5000);
+            
+            return true;
+        });
+    }
+    
+    // Set default due date to tomorrow
+    const dueDateInput = document.getElementById('add_required_due_date');
+    if (dueDateInput) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(9, 0, 0, 0); // Set to 9 AM tomorrow
+        
+        // Format for datetime-local input
+        const formattedDate = tomorrow.toISOString().slice(0, 16);
+        dueDateInput.value = formattedDate;
+        dueDateInput.min = new Date().toISOString().slice(0, 16);
+    }
+    
+    // Allow Enter key to add items
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && (e.target === taskSearchSelect || e.target === employeeSearchSelect)) {
+            e.preventDefault();
+            if (e.target === taskSearchSelect) {
+                addTaskBtn.click();
+            } else {
+                addEmployeeBtn.click();
+            }
+        }
+    });
+});
+</script>

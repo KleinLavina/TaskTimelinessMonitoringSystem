@@ -20,9 +20,9 @@ urlpatterns = [
     path('tasks/add/', views.add_task_view, name='add_task'),
     path('tasks/edit/<int:id>/', views.edit_task_view, name='edit_task'),
     path('tasks/delete/<int:id>/', views.delete_task_view, name='delete_task'),
-    path('tasks/get/<int:id>/', views.get_task_data, name='get_task_data'),
 
     path('tasks_assign/', views.tasks_assign_view, name='tasks_assign'),
+    path('tasks_assign/create/', views.create_task_assignment, name='create_task_assignment'),
    
     path('settings/', views.settings_view, name='settings'),
 ]
