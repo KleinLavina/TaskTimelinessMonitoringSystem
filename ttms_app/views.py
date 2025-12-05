@@ -2,6 +2,7 @@ from datetime import datetime # Keep standard datetime if you need it
 
 # ➡️ ADD THIS: Use Django's timezone utility
 from django.utils import timezone 
+from django.utils.timezone import make_aware
 
 from gettext import translation
 from django.shortcuts import render, redirect, get_object_or_404
@@ -15,7 +16,7 @@ def dashboard_view(request):
     """Render the admin dashboard"""
     return render(request, 'admin_dashboard/dashboard.html')
 
-#==================EMPLOYEE PAGE=================
+#====================================================EMPLOYEE PAGE=========================================================================
 def users_view(request):
     employees = Employee.objects.all().order_by('id')
     
@@ -92,7 +93,7 @@ def get_employee_data(request, id):
     }
     return JsonResponse(data)
 
-#=======================TASK PAGE=========================
+#===============================================================TASK PAGE================================================================================
 
 def tasks_view(request):
     """Task Definitions page view"""
@@ -157,7 +158,7 @@ def delete_task_view(request, id):
     return redirect('ttms_app:tasks')
 
 
-#========================TASK ASSIGNMENT=====================
+#=================================================================================TASK ASSIGNMENT====================================================================
 def assignments_view(request):
     assignments = TaskAssignment.objects.all().order_by('id')
 
@@ -174,33 +175,76 @@ def assignments_view(request):
 
     return render(request, 'admin_dashboard/assignment.html', context)
 
-
 def create_assignment_view(request):
-    """Create TaskAssignment (workers + tasks + due date)"""
+    """Create TaskAssignment with unique employee/task assignment"""
     if request.method == "POST":
         try:
-            workers = request.POST.getlist("workers")
-            tasks = request.POST.getlist("tasks")
-            due_date = request.POST.get("required_due_date")
-
-            assignment = TaskAssignment.objects.create(
-                required_due_date=due_date
+            # Get form data
+            worker_ids = request.POST.getlist("workers[]")
+            task_ids = request.POST.getlist("tasks[]")
+            due_date_str = request.POST.get("required_due_date")
+            
+            # Filter out empty values
+            worker_ids = [w for w in worker_ids if w]
+            task_ids = [t for t in task_ids if t]
+            
+            # Validate
+            if not worker_ids:
+                messages.error(request, "Please select at least one employee.")
+                return redirect('ttms_app:assignments')
+            
+            if not task_ids:
+                messages.error(request, "Please select at least one task.")
+                return redirect('ttms_app:assignments')
+            
+            if not due_date_str:
+                messages.error(request, "Please select a due date.")
+                return redirect('ttms_app:assignments')
+            
+            # Check for duplicates (should be prevented by JS, but double-check)
+            if len(worker_ids) != len(set(worker_ids)):
+                messages.error(request, "Duplicate employees selected.")
+                return redirect('ttms_app:assignments')
+            
+            if len(task_ids) != len(set(task_ids)):
+                messages.error(request, "Duplicate tasks selected.")
+                return redirect('ttms_app:assignments')
+            
+            # Convert date
+            due_date = timezone.make_aware(
+                datetime.strptime(due_date_str, '%Y-%m-%dT%H:%M')
             )
-
-            assignment.worker.set(workers)
-            assignment.task.set(tasks)
-            assignment.save()
-
-            messages.success(request, "Task Assignment created successfully!")
-
+            
+            if due_date <= timezone.now():
+                messages.error(request, "Due date must be in the future.")
+                return redirect('ttms_app:assignments')
+            
+            # Create assignment
+            assignment = TaskAssignment.objects.create(
+                required_due_date=due_date,
+                submission_status='P'
+            )
+            
+            # Add employees and tasks
+            assignment.worker.add(*worker_ids)
+            assignment.task.add(*task_ids)
+            
+            messages.success(request, 
+                f"Assignment created successfully! {len(worker_ids)} employee(s) assigned to {len(task_ids)} task(s).")
+            
         except Exception as e:
             messages.error(request, f"Error creating assignment: {str(e)}")
-
+        
         return redirect('ttms_app:assignments')
-
-    # fallback GET
-    return redirect('ttms_app:assignments')
-
+    
+    # GET request
+    employees = Employee.objects.all().order_by('full_name')
+    tasks = Task.objects.all().order_by('title')
+    
+    return render(request, 'admin_dashboard/assignment.html', {
+        'employees': employees,
+        'tasks': tasks,
+    })
 
 def settings_view(request):
     """settings page view"""

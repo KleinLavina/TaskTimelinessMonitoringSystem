@@ -1,61 +1,457 @@
-<!-- Create Assignment Modal -->
-<div class="modal fade"
-     id="createAssignmentModal"
-     tabindex="-1"
-     aria-labelledby="createAssignmentModalLabel"
-     aria-hidden="true"
-     data-bs-backdrop="static"
-     data-bs-keyboard="false">
-
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+<!-- Create Assignment Modal with Fixed Dropdowns -->
+<div class="modal fade" id="createAssignmentModal" tabindex="-1">
+    <div class="modal-dialog">
         <div class="modal-content">
-
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="createAssignmentModalLabel">Create Assignment</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-header">
+                <h5 class="modal-title">New Task Assignment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-
-            <form method="POST" action="{% url 'ttms_app:create_assignment' %}">
+            
+            <form method="POST" action="{% url 'ttms_app:create_assignment' %}" id="assignmentForm">
                 {% csrf_token %}
-
+                
                 <div class="modal-body">
-
-                    <!-- Select Workers -->
-                    <div class="mb-3">
-                        <label class="form-label">Select Workers</label>
-                        <select name="workers" class="form-select" multiple required>
-                            {% for worker in employees %}
-                            <option value="{{ worker.id }}">{{ worker.full_name }}</option>
-                            {% endfor %}
-                        </select>
+                    
+                    <!-- EMPLOYEES -->
+                    <div class="mb-4">
+                        <label class="form-label fw-medium mb-2 d-flex justify-content-between">
+                            <span>Employees to Assign</span>
+                            <small class="text-muted" id="employeeCount">0 employees selected</small>
+                        </label>
+                        
+                        <!-- Employee fields container -->
+                        <div id="employeeFields">
+                            <!-- First employee field -->
+                            <div class="input-group mb-2 employee-field">
+                                <select name="workers[]" class="form-control employee-select" required data-index="0">
+                                    <option value="">Select employee</option>
+                                    {% for employee in employees %}
+                                    <option value="{{ employee.id }}">
+                                        {{ employee.full_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-btn" style="display: none;" onclick="removeEmployeeField(this)">
+                                    ×
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Add employee button -->
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                    onclick="addEmployeeField()" id="addEmployeeBtn">
+                                <span>+ Assign another employee</span>
+                            </button>
+                        </div>
                     </div>
-
-                    <!-- Select Tasks -->
-                    <div class="mb-3">
-                        <label class="form-label">Select Tasks</label>
-                        <select name="tasks" class="form-select" multiple required>
-                            {% for task in tasks %}
-                            <option value="{{ task.id }}">{{ task.title }}</option>
-                            {% endfor %}
-                        </select>
+                    
+                    <!-- TASKS -->
+                    <div class="mb-4">
+                        <label class="form-label fw-medium mb-2 d-flex justify-content-between">
+                            <span>Tasks to Assign</span>
+                            <small class="text-muted" id="taskCount">0 tasks selected</small>
+                        </label>
+                        
+                        <!-- Task fields container -->
+                        <div id="taskFields">
+                            <!-- First task field -->
+                            <div class="input-group mb-2 task-field">
+                                <select name="tasks[]" class="form-control task-select" required data-index="0">
+                                    <option value="">Select task</option>
+                                    {% for task in tasks %}
+                                    <option value="{{ task.id }}">
+                                        {{ task.title }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-btn" style="display: none;" onclick="removeTaskField(this)">
+                                    ×
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Add task button -->
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                    onclick="addTaskField()" id="addTaskBtn">
+                                <span>+ Assign another task</span>
+                            </button>
+                        </div>
                     </div>
-
-                    <!-- Due Date -->
-                    <div class="mb-3">
-                        <label class="form-label">Required Due Date</label>
-                        <input type="datetime-local" name="required_due_date"
+                    
+                    <!-- DUE DATE -->
+                    <div class="mb-4">
+                        <label class="form-label fw-medium">Due Date & Time</label>
+                        <input type="datetime-local" name="required_due_date" 
                                class="form-control" required>
+                        <small class="text-muted">When should this assignment be completed?</small>
                     </div>
-
+                    
                 </div>
-
+                
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary"
-                            data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create</button>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-dark">Create Assignment</button>
                 </div>
             </form>
-
         </div>
     </div>
 </div>
+
+<!-- Hidden template for employee options -->
+<template id="employeeOptionsTemplate">
+    {% for employee in employees %}
+    <option value="{{ employee.id }}">{{ employee.full_name }}</option>
+    {% endfor %}
+</template>
+
+<!-- Hidden template for task options -->
+<template id="taskOptionsTemplate">
+    {% for task in tasks %}
+    <option value="{{ task.id }}">{{ task.title }}</option>
+    {% endfor %}
+</template>
+
+<script>
+// Store the original data from templates
+let allEmployees = null;
+let allTasks = null;
+
+// Get employee data from template
+function getAllEmployees() {
+    if (!allEmployees) {
+        allEmployees = [];
+        const template = document.getElementById('employeeOptionsTemplate');
+        if (template) {
+            const options = template.content.querySelectorAll('option');
+            options.forEach(option => {
+                allEmployees.push({
+                    id: option.value,
+                    name: option.textContent.trim()
+                });
+            });
+        }
+    }
+    return allEmployees;
+}
+
+// Get task data from template
+function getAllTasks() {
+    if (!allTasks) {
+        allTasks = [];
+        const template = document.getElementById('taskOptionsTemplate');
+        if (template) {
+            const options = template.content.querySelectorAll('option');
+            options.forEach(option => {
+                allTasks.push({
+                    id: option.value,
+                    name: option.textContent.trim()
+                });
+            });
+        }
+    }
+    return allTasks;
+}
+
+// Function to update dropdown options based on selected values
+function updateEmployeeDropdowns() {
+    const employees = getAllEmployees();
+    
+    // Get all currently selected employee IDs
+    const selectedIds = [];
+    document.querySelectorAll('.employee-select').forEach(select => {
+        if (select.value) {
+            selectedIds.push(select.value);
+        }
+    });
+    
+    // Update each dropdown
+    document.querySelectorAll('.employee-select').forEach(select => {
+        const currentValue = select.value;
+        const isFirstField = select.dataset.index === "0";
+        
+        // Clear all options
+        select.innerHTML = '';
+        
+        // Add empty option
+        const emptyOption = document.createElement('option');
+        emptyOption.value = '';
+        emptyOption.textContent = isFirstField ? 'Select employee' : 'Select additional employee';
+        select.appendChild(emptyOption);
+        
+        // Add filtered options
+        employees.forEach(employee => {
+            // Only add if employee is not selected in OTHER dropdowns
+            // OR if this is the current value of this dropdown (allow keeping same selection)
+            if (!selectedIds.includes(employee.id) || employee.id === currentValue) {
+                const option = document.createElement('option');
+                option.value = employee.id;
+                option.textContent = employee.name;
+                select.appendChild(option);
+            }
+        });
+        
+        // Restore current selection if it exists
+        if (currentValue) {
+            select.value = currentValue;
+        }
+    });
+    
+    // Update employee count
+    const employeeCount = selectedIds.length;
+    document.getElementById('employeeCount').textContent = `${employeeCount} employee${employeeCount !== 1 ? 's' : ''} selected`;
+    
+    // Disable add button if all employees are selected
+    const addEmployeeBtn = document.getElementById('addEmployeeBtn');
+    const totalEmployees = employees.length;
+    if (selectedIds.length >= totalEmployees) {
+        addEmployeeBtn.disabled = true;
+        addEmployeeBtn.textContent = 'All employees assigned';
+    } else {
+        addEmployeeBtn.disabled = false;
+        addEmployeeBtn.innerHTML = '<span>+ Assign another employee</span>';
+    }
+}
+
+function updateTaskDropdowns() {
+    const tasks = getAllTasks();
+    
+    // Get all currently selected task IDs
+    const selectedIds = [];
+    document.querySelectorAll('.task-select').forEach(select => {
+        if (select.value) {
+            selectedIds.push(select.value);
+        }
+    });
+    
+    // Update each dropdown
+    document.querySelectorAll('.task-select').forEach(select => {
+        const currentValue = select.value;
+        const isFirstField = select.dataset.index === "0";
+        
+        // Clear all options
+        select.innerHTML = '';
+        
+        // Add empty option
+        const emptyOption = document.createElement('option');
+        emptyOption.value = '';
+        emptyOption.textContent = isFirstField ? 'Select task' : 'Select additional task';
+        select.appendChild(emptyOption);
+        
+        // Add filtered options
+        tasks.forEach(task => {
+            if (!selectedIds.includes(task.id) || task.id === currentValue) {
+                const option = document.createElement('option');
+                option.value = task.id;
+                option.textContent = task.name;
+                select.appendChild(option);
+            }
+        });
+        
+        // Restore current selection if it exists
+        if (currentValue) {
+            select.value = currentValue;
+        }
+    });
+    
+    // Update task count
+    const taskCount = selectedIds.length;
+    document.getElementById('taskCount').textContent = `${taskCount} task${taskCount !== 1 ? 's' : ''} selected`;
+    
+    // Disable add button if all tasks are selected
+    const addTaskBtn = document.getElementById('addTaskBtn');
+    const totalTasks = tasks.length;
+    if (selectedIds.length >= totalTasks) {
+        addTaskBtn.disabled = true;
+        addTaskBtn.textContent = 'All tasks assigned';
+    } else {
+        addTaskBtn.disabled = false;
+        addTaskBtn.innerHTML = '<span>+ Assign another task</span>';
+    }
+}
+
+// Add new employee field
+function addEmployeeField() {
+    // Get current employee fields to determine new index
+    const employeeFields = document.querySelectorAll('.employee-field');
+    const newIndex = employeeFields.length;
+    
+    // Create new field
+    const container = document.getElementById('employeeFields');
+    const newField = document.createElement('div');
+    newField.className = 'input-group mb-2 employee-field';
+    newField.innerHTML = `
+        <select name="workers[]" class="form-control employee-select" data-index="${newIndex}">
+            <option value="">Select additional employee</option>
+        </select>
+        <button type="button" class="btn btn-outline-danger btn-sm remove-btn" onclick="removeEmployeeField(this)">
+            ×
+        </button>
+    `;
+    container.appendChild(newField);
+    
+    // Update dropdowns to reflect new field
+    updateEmployeeDropdowns();
+    
+    // Show remove button for all fields except first
+    document.querySelectorAll('.employee-field .remove-btn').forEach((btn, index) => {
+        btn.style.display = index === 0 ? 'none' : 'block';
+    });
+}
+
+// Add new task field
+function addTaskField() {
+    // Get current task fields to determine new index
+    const taskFields = document.querySelectorAll('.task-field');
+    const newIndex = taskFields.length;
+    
+    // Create new field
+    const container = document.getElementById('taskFields');
+    const newField = document.createElement('div');
+    newField.className = 'input-group mb-2 task-field';
+    newField.innerHTML = `
+        <select name="tasks[]" class="form-control task-select" data-index="${newIndex}">
+            <option value="">Select additional task</option>
+        </select>
+        <button type="button" class="btn btn-outline-danger btn-sm remove-btn" onclick="removeTaskField(this)">
+            ×
+        </button>
+    `;
+    container.appendChild(newField);
+    
+    // Update dropdowns to reflect new field
+    updateTaskDropdowns();
+    
+    // Show remove button for all fields except first
+    document.querySelectorAll('.task-field .remove-btn').forEach((btn, index) => {
+        btn.style.display = index === 0 ? 'none' : 'block';
+    });
+}
+
+// Remove employee field
+function removeEmployeeField(button) {
+    const field = button.closest('.employee-field');
+    if (field) {
+        field.remove();
+        
+        // Re-index all remaining employee fields
+        document.querySelectorAll('.employee-field').forEach((field, index) => {
+            const select = field.querySelector('.employee-select');
+            select.dataset.index = index;
+            
+            // Update empty option text for first field
+            const emptyOption = select.querySelector('option[value=""]');
+            if (emptyOption) {
+                emptyOption.textContent = index === 0 ? 'Select employee' : 'Select additional employee';
+            }
+        });
+        
+        // Update dropdowns after removal
+        updateEmployeeDropdowns();
+        
+        // Update remove button visibility
+        document.querySelectorAll('.employee-field .remove-btn').forEach((btn, index) => {
+            btn.style.display = index === 0 ? 'none' : 'block';
+        });
+    }
+}
+
+// Remove task field
+function removeTaskField(button) {
+    const field = button.closest('.task-field');
+    if (field) {
+        field.remove();
+        
+        // Re-index all remaining task fields
+        document.querySelectorAll('.task-field').forEach((field, index) => {
+            const select = field.querySelector('.task-select');
+            select.dataset.index = index;
+            
+            // Update empty option text for first field
+            const emptyOption = select.querySelector('option[value=""]');
+            if (emptyOption) {
+                emptyOption.textContent = index === 0 ? 'Select task' : 'Select additional task';
+            }
+        });
+        
+        // Update dropdowns after removal
+        updateTaskDropdowns();
+        
+        // Update remove button visibility
+        document.querySelectorAll('.task-field .remove-btn').forEach((btn, index) => {
+            btn.style.display = index === 0 ? 'none' : 'block';
+        });
+    }
+}
+
+// Set min date to current time
+function initializeForm() {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    
+    const dateInput = document.querySelector('input[name="required_due_date"]');
+    if (dateInput) {
+        dateInput.min = now.toISOString().slice(0, 16);
+    }
+    
+    // Initialize dropdowns
+    updateEmployeeDropdowns();
+    updateTaskDropdowns();
+    
+    // Event listeners for dropdown changes
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('employee-select')) {
+            updateEmployeeDropdowns();
+        }
+        if (e.target.classList.contains('task-select')) {
+            updateTaskDropdowns();
+        }
+    });
+    
+    // Form validation
+    const form = document.getElementById('assignmentForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Check for empty required fields
+            const employeeSelects = Array.from(document.querySelectorAll('.employee-select'));
+            const taskSelects = Array.from(document.querySelectorAll('.task-select'));
+            
+            const emptyEmployees = employeeSelects.some(select => !select.value);
+            const emptyTasks = taskSelects.some(select => !select.value);
+            
+            if (emptyEmployees) {
+                e.preventDefault();
+                alert('Please select an employee for all employee fields.');
+                return false;
+            }
+            
+            if (emptyTasks) {
+                e.preventDefault();
+                alert('Please select a task for all task fields.');
+                return false;
+            }
+            
+            // Check due date
+            const dueDateInput = document.querySelector('input[name="required_due_date"]');
+            if (dueDateInput && dueDateInput.value) {
+                const selectedDate = new Date(dueDateInput.value);
+                if (selectedDate <= new Date()) {
+                    e.preventDefault();
+                    alert('Due date must be in the future.');
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+    }
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeForm);
+} else {
+    initializeForm();
+}
+</script>
