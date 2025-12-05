@@ -1,0 +1,61 @@
+<!-- Create Assignment Modal -->
+<div class="modal fade"
+     id="createAssignmentModal"
+     tabindex="-1"
+     aria-labelledby="createAssignmentModalLabel"
+     aria-hidden="true"
+     data-bs-backdrop="static"
+     data-bs-keyboard="false">
+
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="createAssignmentModalLabel">Create Assignment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form method="POST" action="{% url 'ttms_app:create_assignment' %}">
+                {% csrf_token %}
+
+                <div class="modal-body">
+
+                    <!-- Select Workers -->
+                    <div class="mb-3">
+                        <label class="form-label">Select Workers</label>
+                        <select name="workers" class="form-select" multiple required>
+                            {% for worker in employees %}
+                            <option value="{{ worker.id }}">{{ worker.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Select Tasks -->
+                    <div class="mb-3">
+                        <label class="form-label">Select Tasks</label>
+                        <select name="tasks" class="form-select" multiple required>
+                            {% for task in tasks %}
+                            <option value="{{ task.id }}">{{ task.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Due Date -->
+                    <div class="mb-3">
+                        <label class="form-label">Required Due Date</label>
+                        <input type="datetime-local" name="required_due_date"
+                               class="form-control" required>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>

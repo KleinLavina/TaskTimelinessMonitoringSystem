@@ -15,6 +15,7 @@ def dashboard_view(request):
     """Render the admin dashboard"""
     return render(request, 'admin_dashboard/dashboard.html')
 
+#==================EMPLOYEE PAGE=================
 def users_view(request):
     employees = Employee.objects.all().order_by('id')
     
@@ -91,7 +92,7 @@ def get_employee_data(request, id):
     }
     return JsonResponse(data)
 
-# Add other views you might need
+#=======================TASK PAGE=========================
 
 def tasks_view(request):
     """Task Definitions page view"""
@@ -156,21 +157,51 @@ def delete_task_view(request, id):
     return redirect('ttms_app:tasks')
 
 
+#========================TASK ASSIGNMENT=====================
 def assignments_view(request):
-    """Task Assignments page view"""
     assignments = TaskAssignment.objects.all().order_by('id')
-    
-    # Get status filter from query parameters
+
     status_filter = request.GET.get('status', 'all')
     if status_filter != 'all':
         assignments = assignments.filter(submission_status=status_filter)
-    
+
     context = {
         'assignments': assignments,
-        'now': timezone.now()  # Add current time for comparison
+        'now': timezone.now(),
+        'employees': Employee.objects.all(),
+        'tasks': Task.objects.all()
     }
-    
+
     return render(request, 'admin_dashboard/assignment.html', context)
+
+
+def create_assignment_view(request):
+    """Create TaskAssignment (workers + tasks + due date)"""
+    if request.method == "POST":
+        try:
+            workers = request.POST.getlist("workers")
+            tasks = request.POST.getlist("tasks")
+            due_date = request.POST.get("required_due_date")
+
+            assignment = TaskAssignment.objects.create(
+                required_due_date=due_date
+            )
+
+            assignment.worker.set(workers)
+            assignment.task.set(tasks)
+            assignment.save()
+
+            messages.success(request, "Task Assignment created successfully!")
+
+        except Exception as e:
+            messages.error(request, f"Error creating assignment: {str(e)}")
+
+        return redirect('ttms_app:assignments')
+
+    # fallback GET
+    return redirect('ttms_app:assignments')
+
+
 def settings_view(request):
     """settings page view"""
     return render(request, 'admin_dashboard/settings.html')
