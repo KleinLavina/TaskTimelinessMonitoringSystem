@@ -25,6 +25,8 @@ urlpatterns = [
     # Task Assignment CRUD
     path('assignments/', views.assignments_view, name='assignments'),
     path('assignments/create/', views.create_assignment_view, name='create_assignment'),
+    path("assignments/delete/<int:pk>/", views.delete_assignment_view, name="delete_assignment"),
+
 
     
    

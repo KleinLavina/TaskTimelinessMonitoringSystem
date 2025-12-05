@@ -246,6 +246,13 @@ def create_assignment_view(request):
         'tasks': tasks,
     })
 
+def delete_assignment_view(request, pk):
+    assignment = get_object_or_404(TaskAssignment, pk=pk)
+    if request.method == "POST":
+        assignment.delete()
+        return redirect('ttms_app:assignments')
+    
+
 def settings_view(request):
     """settings page view"""
     return render(request, 'admin_dashboard/settings.html')

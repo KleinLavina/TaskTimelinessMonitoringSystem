@@ -145,11 +145,23 @@
                         <small class="text-muted">
                             ID: {{ assignment.pk }}
                         </small>
-                        <div class="actions">
-                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#assignmentModal{{ assignment.pk }}">
-                                <i class="fas fa-eye"></i> View Details
+                        <div class="actions d-flex gap-2">
+                            <button type="button"
+                                class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#assignmentModal{{ assignment.pk }}">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+
+                            <!-- DELETE TRIGGER -->
+                            <button type="button"
+                                class="btn btn-sm btn-outline-danger"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteAssignmentModal{{ assignment.pk }}">
+                                <i class="fas fa-trash"></i> Delete
                             </button>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -325,6 +337,7 @@
 </div>
 
 {% include 'admin_dashboard/modals/create_assignment_modal.html' %}
+{% include 'admin_dashboard/modals/delete_assignment_modal.html' %}
 <style>
 .assignment-card {
     transition: transform 0.2s, box-shadow 0.2s;

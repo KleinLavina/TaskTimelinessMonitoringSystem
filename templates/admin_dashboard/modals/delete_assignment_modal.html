@@ -1,0 +1,33 @@
+{% for assignment in assignments %}
+<div class="modal fade" id="deleteAssignmentModal{{ assignment.pk }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Confirm Delete
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body text-center">
+                <p class="mb-2">Are you sure you want to delete:</p>
+                <h5 class="fw-bold">Assignment #{{ assignment.pk }}</h5>
+                <p>This action cannot be undone.</p>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+
+                <form action="{% url 'ttms_app:delete_assignment' assignment.pk %}" method="post">
+                    {% csrf_token %}
+                    <button class="btn btn-danger">
+                        Yes, Delete
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endfor %}
